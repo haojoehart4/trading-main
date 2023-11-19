@@ -143,10 +143,6 @@ const bot = new TelegramBot(token, { polling: true });
 
 // -------------------------- Binance Code Example ---------------
 // Subscribe to the Binance websocket stream for the market price of BTCUSDT
-const ws = new WebSocket("wss://stream.binance.com:9443/ws/lqtyusdt@kline_1h");
-const targetTime = new Date();
-targetTime.setHours(targetTime.getHours() + 1);
-
 let chat_id = 0;
 let countingStepBalance = 0;
 let mileStone = 0;
@@ -154,6 +150,13 @@ let boolToCheck = false;
 let notificationVolume = "";
 let tradingStatus = "stop";
 let tokenPairs = "";
+let intervalInvest = '';
+
+const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${tokenPairs.toLowerCase() ?? 'btcusdt'}@kline_${intervalInvest ?? '1h'}`);
+const targetTime = new Date();
+targetTime.setHours(targetTime.getHours() + 1);
+
+
 
 bot.onText(/\/start/, (msg) => {
   chat_id = msg.chat.id;
@@ -178,6 +181,7 @@ bot.onText(/\/stop/, (msg) => {
   tradingStatus = "stop";
   tokenPairs = "";
   chat_id = 0;
+  intervalInvest = ''
   bot.sendMessage(msg.chat.id, "Stop bot successfully");
 });
 
@@ -200,13 +204,22 @@ bot.on("message", (msg) => {
         `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`
       )
       .then((res) => {
-        tradingStatus = "start";
         tokenPairs = msg.text.toString();
-        bot.sendMessage(msg.chat.id, "BOT run successfully.");
+        bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
+          reply_markup: {
+            keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
+          },
+        });
       })
       .catch((err) => {
         bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
       });
+  }
+
+  if (msg.text.toString().toLowerCase().indexOf("interval") !== -1 ) {
+    tradingStatus = "start";
+    intervalInvest = msg.text.toString().split(':')[1].trim()
+    bot.sendMessage(msg.chat.id, "Bot is running...")
   }
 });
 
@@ -262,62 +275,62 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
     }
   }
 
-  // if (new Date().getMinutes() === 58 || new Date().getMinutes() === 59 && tradingStatus === 'start') {
-  //   if (notificationVolume === "") {
-  //     bot.sendMessage(
-  //       5678390935,
-  //       `base_asset_volume: ${rateOfAnother} - quote_asset_volume: ${rateOfUSDT}`
-  //     );
-  //     notificationVolume = `base_asset_volume: ${rateOfAnother} - quote_asset_volume: ${rateOfUSDT}`;
-  //     bot.sendMessage(5678390935, "Reset boolToCheck and notificationVolume?", {
-  //       reply_markup: {
-  //         keyboard: [["Yes"], ["No"]],
-  //       },
-  //     });
-  //   }
-  //   if (rateOfAnother - rateOfUSDT > 0 && !boolToCheck) {
-  //     if (countingStepBalance < 3) {
-  //       if (countingStepBalance === 0 || countingStepBalance === 1) {
-  //         // const balanceTrade = balance1 *  0.25; // get 10% balance to buy for the first and second trade
-  //         // balance1 = balance1 - balanceTrade; // Remain of default balance after negative first and second 25% to buy tokens
-  //         if (countingStepBalance === 0) {
-  //           //mua 25%
-  //           mileStone = closePrice1 - closePrice1 * 0.01;
-  //           boolToCheck = true;
-  //           bot.sendMessage(
-  //             5678390935,
-  //             `Giá lúc mua lần 1: ${closePrice1} - Khối lượng mua 25%`
-  //           );
-  //         } else {
-  //           //mua 25%
-  //           mileStone = closePrice1 - closePrice1 * 0.005;
-  //           boolToCheck = true;
-  //           bot.sendMessage(
-  //             5678390935,
-  //             `Giá lúc mua lần 2: ${closePrice1} - Khối lượng mua 25% - Update milestone lên ${mileStone}`
-  //           );
-  //         }
-  //       } else if (
-  //         countingStepBalance === 2 &&
-  //         1.002 < rateOfAnother / rateOfUSDT < 1.1
-  //       ) {
-  //         mileStone = closePrice1 - closePrice1 * 0.005;
-  //         boolToCheck = true;
-  //         bot.sendMessage(
-  //           5678390935,
-  //           `Giá lúc mua lần 3: ${closePrice1} - Khối lượng mua 50% - Update milestone lên ${mileStone}`
-  //         );
-  //         isEndBalance = true;
-  //         // mua 50%
-  //       }
-  //       countingStepBalance += 1;
-  //     } else {
-  //       if (rateOfAnother - rateOfUSDT > 0) {
-  //         mileStone = closePrice1 - closePrice1 * 0.005;
-  //       }
-  //     }
-  //   }
-  // }
+  if (new Date().getMinutes() === 58 || new Date().getMinutes() === 59 && tradingStatus === 'start') {
+    if (notificationVolume === "") {
+      bot.sendMessage(
+        5678390935,
+        `base_asset_volume: ${rateOfAnother} - quote_asset_volume: ${rateOfUSDT}`
+      );
+      notificationVolume = `base_asset_volume: ${rateOfAnother} - quote_asset_volume: ${rateOfUSDT}`;
+      bot.sendMessage(5678390935, "Reset boolToCheck and notificationVolume?", {
+        reply_markup: {
+          keyboard: [["Yes"], ["No"]],
+        },
+      });
+    }
+    if (rateOfAnother - rateOfUSDT > 0 && !boolToCheck) {
+      if (countingStepBalance < 3) {
+        if (countingStepBalance === 0 || countingStepBalance === 1) {
+          // const balanceTrade = balance1 *  0.25; // get 10% balance to buy for the first and second trade
+          // balance1 = balance1 - balanceTrade; // Remain of default balance after negative first and second 25% to buy tokens
+          if (countingStepBalance === 0) {
+            //mua 25%
+            mileStone = closePrice1 - closePrice1 * 0.01;
+            boolToCheck = true;
+            bot.sendMessage(
+              5678390935,
+              `Giá lúc mua lần 1: ${closePrice1} - Khối lượng mua 25%`
+            );
+          } else {
+            //mua 25%
+            mileStone = closePrice1 - closePrice1 * 0.005;
+            boolToCheck = true;
+            bot.sendMessage(
+              5678390935,
+              `Giá lúc mua lần 2: ${closePrice1} - Khối lượng mua 25% - Update milestone lên ${mileStone}`
+            );
+          }
+        } else if (
+          countingStepBalance === 2 &&
+          1.002 < rateOfAnother / rateOfUSDT < 1.1
+        ) {
+          mileStone = closePrice1 - closePrice1 * 0.005;
+          boolToCheck = true;
+          bot.sendMessage(
+            5678390935,
+            `Giá lúc mua lần 3: ${closePrice1} - Khối lượng mua 50% - Update milestone lên ${mileStone}`
+          );
+          isEndBalance = true;
+          // mua 50%
+        }
+        countingStepBalance += 1;
+      } else {
+        if (rateOfAnother - rateOfUSDT > 0) {
+          mileStone = closePrice1 - closePrice1 * 0.005;
+        }
+      }
+    }
+  }
 };
 
 ws.on("open", () => {

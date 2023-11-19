@@ -28,7 +28,7 @@ const port = process.env.NODE_PORT;
 
 const binance = new Binance().options({
   APIKEY: process.env.BINACE_API_KEY,
-  APISECRET: process.env.BINANCE_API_SECRET_KEY,
+  APISECRET: process.env.BINANCE_API_SECRET_KEY, 
 });
 
 // binance.futuresPrices()

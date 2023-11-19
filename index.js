@@ -195,25 +195,40 @@ bot.on("message", (msg) => {
     bot.sendMessage(msg.chat.id, "Please type new token pairs to invest");
   }
 
-  if (
+  if ( 
     msg.text.toString().toLowerCase().indexOf("usdt") !== -1 &&
     msg.text.toString().toLowerCase().indexOf("pair") !== -1
   ) {
-    axios
-      .get(
-        `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`
-      )
-      .then((res) => {
-        tokenPairs = msg.text.toString();
-        bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
-          reply_markup: {
-            keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
-          },
-        });
-      })
-      .catch((err) => {
-        bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
+
+    fetch( `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`)
+    .then((res) => {
+      tokenPairs = msg.text.toString();
+      bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
+        reply_markup: {
+          keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
+        },
       });
+    })
+    .catch((err) => {
+      bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
+    });
+
+
+    // axios
+    //   .get(
+    //     `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`
+    //   )
+    //   .then((res) => {
+    //     tokenPairs = msg.text.toString();
+    //     bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
+    //       reply_markup: {
+    //         keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
+    //       },
+    //     });
+    //   })
+    //   .catch((err) => {
+    //     bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
+    //   });
   }
 
   if (msg.text.toString().toLowerCase().indexOf("interval") !== -1 ) {
@@ -253,14 +268,14 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
   if (tradingStatus === "start") {
     bot.sendMessage(
       chat_id,
-      'bot run...'
+      rateOfAnother
     );
     if (
       (countingStepBalance === 3 || countingStepBalance === 2) &&
       closePrice1 <= mileStone
     ) {
       // bán hết
-      bot.sendMessage(5678390935, `Bán hết step2 or step 3 - ${closePrice1}`);
+      bot.sendMessage(chat_id, `Bán hết step2 or step 3 - ${closePrice1}`);
       countingStepBalance = 0;
       mileStone = 0;
       tradingStatus = "stop";
@@ -268,7 +283,7 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
       countingStepBalance === 1 &&
       closePrice1 <= mileStone - mileStone * 0.01
     ) {
-      bot.sendMessage(5678390935, `Bán hết step 1 - ${closePrice1}`);
+      bot.sendMessage(chat_id, `Bán hết step 1 - ${closePrice1}`);
       countingStepBalance = 0;
       mileStone = 0;
       tradingStatus = "stop";
@@ -278,11 +293,11 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
   if (new Date().getMinutes() === 58 || new Date().getMinutes() === 59 && tradingStatus === 'start') {
     if (notificationVolume === "") {
       bot.sendMessage(
-        5678390935,
+        chat_id,
         `base_asset_volume: ${rateOfAnother} - quote_asset_volume: ${rateOfUSDT}`
       );
       notificationVolume = `base_asset_volume: ${rateOfAnother} - quote_asset_volume: ${rateOfUSDT}`;
-      bot.sendMessage(5678390935, "Reset boolToCheck and notificationVolume?", {
+      bot.sendMessage(chat_id, "Reset boolToCheck and notificationVolume?", {
         reply_markup: {
           keyboard: [["Yes"], ["No"]],
         },
@@ -298,7 +313,7 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
             mileStone = closePrice1 - closePrice1 * 0.01;
             boolToCheck = true;
             bot.sendMessage(
-              5678390935,
+              chat_id,
               `Giá lúc mua lần 1: ${closePrice1} - Khối lượng mua 25%`
             );
           } else {
@@ -306,7 +321,7 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
             mileStone = closePrice1 - closePrice1 * 0.005;
             boolToCheck = true;
             bot.sendMessage(
-              5678390935,
+              chat_id,
               `Giá lúc mua lần 2: ${closePrice1} - Khối lượng mua 25% - Update milestone lên ${mileStone}`
             );
           }
@@ -317,7 +332,7 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
           mileStone = closePrice1 - closePrice1 * 0.005;
           boolToCheck = true;
           bot.sendMessage(
-            5678390935,
+            chat_id,
             `Giá lúc mua lần 3: ${closePrice1} - Khối lượng mua 50% - Update milestone lên ${mileStone}`
           );
           isEndBalance = true;

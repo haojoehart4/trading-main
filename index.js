@@ -197,9 +197,7 @@ bot.on("message", (msg) => {
   ) {
     axios
       .get(
-        `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text
-          .split(" ")[1]
-          .toUpperCase()}`
+        `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`
       )
       .then((res) => {
         tradingStatus = "start";

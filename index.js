@@ -31,8 +31,8 @@ app.get("/", (req, res) => {
 });
 
 const binance = new Binance().options({
-  APIKEY: process.env.BINACE_API_KEY,
-  APISECRET: process.env.BINANCE_API_SECRET_KEY,
+  APIKEY: process.env.BINACE_API_KEY || '8Xktj5lcXas28Zwa9GY1n9cRFV8xAd9yrWX8pxzWKvZaqt7GOGesqm03x8NkSERO',
+  APISECRET: process.env.BINANCE_API_SECRET_KEY || 'd5fJ0KFH2AO6iHUqkhyO9pUCkUIonrg4YLwW8KerXrw2ezQhgmHzlcR8Uv2SLZPQ',
 });
 
 // binance.futuresPrices()

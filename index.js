@@ -152,7 +152,7 @@ let tradingStatus = "stop";
 let tokenPairs = "";
 let intervalInvest = '';
 
-const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${'btcusdt'}@kline_${intervalInvest ?? '1h'}`);
+const ws = new WebSocket(`wss://stream.binance.com:9443/ws/btcusdt@kline_${intervalInvest !== '' ? intervalInvest : '1h'}`);
 const targetTime = new Date();
 targetTime.setHours(targetTime.getHours() + 1);
 

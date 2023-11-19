@@ -200,7 +200,7 @@ bot.on("message", (msg) => {
     msg.text.toString().toLowerCase().indexOf("pair") !== -1
   ) {
 
-    fetch( `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`)
+    axios.get( `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`)
     .then((res) => {
       tokenPairs = msg.text.toString();
       bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {

@@ -26,13 +26,13 @@ app.use(function (req, res, next) {
 const TelegramBot = require("node-telegram-bot-api");
 const port = process.env.NODE_PORT;
 
-app.get('/', (req, res) => {
-  res.send('Hello from Node.js!');
+app.get("/", (req, res) => {
+  res.send("Hello from Node.js!");
 });
 
 const binance = new Binance().options({
   APIKEY: process.env.BINACE_API_KEY,
-  APISECRET: process.env.BINANCE_API_SECRET_KEY, 
+  APISECRET: process.env.BINANCE_API_SECRET_KEY,
 });
 
 // binance.futuresPrices()
@@ -150,13 +150,15 @@ let boolToCheck = false;
 let notificationVolume = "";
 let tradingStatus = "stop";
 let tokenPairs = "";
-let intervalInvest = '';
+let intervalInvest = "";
 
-const ws = new WebSocket(`wss://stream.binance.com:9443/ws/btcusdt@kline_${intervalInvest !== '' ? intervalInvest : '1h'}`);
+const ws = new WebSocket(
+  `wss://stream.binance.com:9443/ws/btcusdt@kline_${
+    intervalInvest !== "" ? intervalInvest : "1h"
+  }`
+);
 const targetTime = new Date();
 targetTime.setHours(targetTime.getHours() + 1);
-
-
 
 bot.onText(/\/start/, (msg) => {
   chat_id = msg.chat.id;
@@ -181,7 +183,7 @@ bot.onText(/\/stop/, (msg) => {
   tradingStatus = "stop";
   tokenPairs = "";
   chat_id = 0;
-  intervalInvest = ''
+  intervalInvest = "";
   bot.sendMessage(msg.chat.id, "Stop bot successfully");
 });
 
@@ -195,53 +197,51 @@ bot.on("message", (msg) => {
     bot.sendMessage(msg.chat.id, "Please type new token pairs to invest");
   }
 
-  if ( 
+  if (msg.text.toString().toLowerCase().indexOf("balance") !== -1) {
+    binance.balance((error, balances) => {
+      if (error) return console.error(error);
+      let balanceResult = [];
+      for (const x in balances) {
+        if (parseFloat(balances[x].available) > 0) {
+          balanceResult.push(`${x}: ${balances[x].available}`);
+        }
+      }
+      const responseToUser = balanceResult.join(", ");
+      bot.sendMessage(
+        msg.chat.id,
+        `Your balance information here: ${responseToUser}`
+      );
+    });
+  }
+
+  if (
     msg.text.toString().toLowerCase().indexOf("usdt") !== -1 &&
     msg.text.toString().toLowerCase().indexOf("pair") !== -1
   ) {
+    tokenPairs = msg.text.toString().split(":")[1].trim();
     bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
       reply_markup: {
-        keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
+        keyboard: [
+          ["interval: 30m"],
+          ["interval: 1h"],
+          ["interval: 2h"],
+          ["interval: 4h"],
+          ["interval: 6h"],
+          ["interval: 8h"],
+          ["interval: 12h"],
+          ["interval: 1d"],
+          ["interval: 3d"],
+          ["interval: 1w"],
+          ["interval: 1M"],
+        ],
       },
     });
-
-
-    // axios.get( `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`)
-    // .then((res) => {
-    //   tokenPairs = msg.text.toString();
-    //   bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
-    //     reply_markup: {
-    //       keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
-    //     },
-    //   });
-    // })
-    // .catch((err) => {
-    //   bot.sendMessage(msg.chat.id, err.message)
-    //   bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
-    // });
-
-
-    // axios
-    //   .get(
-    //     `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`
-    //   )
-    //   .then((res) => {
-    //     tokenPairs = msg.text.toString();
-    //     bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
-    //       reply_markup: {
-    //         keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
-    //       },
-    //     });
-    //   })
-    //   .catch((err) => {
-    //     bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
-    //   });
   }
 
-  if (msg.text.toString().toLowerCase().indexOf("interval") !== -1 ) {
+  if (msg.text.toString().toLowerCase().indexOf("interval") !== -1) {
     tradingStatus = "start";
-    intervalInvest = msg.text.toString().split(':')[1].trim()
-    bot.sendMessage(msg.chat.id, "Bot is running...")
+    intervalInvest = msg.text.toString().split(":")[1].trim();
+    bot.sendMessage(msg.chat.id, "Bot is running...");
   }
 });
 
@@ -273,14 +273,8 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
   const rateOfUSDT = takerBase1;
   const rateOfAnother = takerQuote1 / closePrice1;
   if (tradingStatus === "start") {
-    bot.sendMessage(
-      chat_id,
-      'haha'
-    );
-    bot.sendMessage(
-      chat_id,
-      rateOfAnother
-    );
+    bot.sendMessage(chat_id, "haha");
+    bot.sendMessage(chat_id, rateOfAnother);
     if (
       (countingStepBalance === 3 || countingStepBalance === 2) &&
       closePrice1 <= mileStone
@@ -301,7 +295,10 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
     }
   }
 
-  if (new Date().getMinutes() === 58 || new Date().getMinutes() === 59 && tradingStatus === 'start') {
+  if (
+    new Date().getMinutes() === 58 ||
+    (new Date().getMinutes() === 59 && tradingStatus === "start")
+  ) {
     if (notificationVolume === "") {
       bot.sendMessage(
         chat_id,

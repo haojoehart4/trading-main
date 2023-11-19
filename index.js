@@ -186,6 +186,7 @@ bot.onText(/\/stop/, (msg) => {
   intervalInvest = "";
   bot.sendMessage(msg.chat.id, "Stop bot successfully");
   ws.terminate()
+  // ws.close()
 });
 
 bot.on("message", (msg) => {

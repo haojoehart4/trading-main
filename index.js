@@ -31,8 +31,8 @@ app.get("/", (req, res) => {
 });
 
 const binance = new Binance().options({
-  APIKEY: '8Xktj5lcXas28Zwa9GY1n9cRFV8xAd9yrWX8pxzWKvZaqt7GOGesqm03x8NkSERO',
-  APISECRET: 'd5fJ0KFH2AO6iHUqkhyO9pUCkUIonrg4YLwW8KerXrw2ezQhgmHzlcR8Uv2SLZPQ',
+  APIKEY: process.env.BINACE_API_KEY,
+  APISECRET: process.env.BINANCE_API_SECRET_KEY,
 });
 
 // binance.futuresPrices()
@@ -153,7 +153,9 @@ let tokenPairs = "";
 let intervalInvest = "";
 
 const ws = new WebSocket(
-  `wss://stream.binance.com:9443/ws/btcusdt@kline_1h`
+  `wss://stream.binance.com:9443/ws/btcusdt@kline_${
+    intervalInvest !== "" ? intervalInvest : "1h"
+  }`
 );
 const targetTime = new Date();
 targetTime.setHours(targetTime.getHours() + 1);
@@ -183,8 +185,6 @@ bot.onText(/\/stop/, (msg) => {
   chat_id = 0;
   intervalInvest = "";
   bot.sendMessage(msg.chat.id, "Stop bot successfully");
-  ws.close()
-  // ws.close()
 });
 
 bot.on("message", (msg) => {
@@ -218,7 +218,6 @@ bot.on("message", (msg) => {
     msg.text.toString().toLowerCase().indexOf("usdt") !== -1 &&
     msg.text.toString().toLowerCase().indexOf("pair") !== -1
   ) {
-    tokenPairs = msg.text.toString().split(":")[1].trim();
     bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
       reply_markup: {
         keyboard: [
@@ -236,54 +235,64 @@ bot.on("message", (msg) => {
         ],
       },
     });
+
+    // axios.get( `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`)
+    // .then((res) => {
+    //   tokenPairs = msg.text.toString();
+    //   bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
+    //     reply_markup: {
+    //       keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
+    //     },
+    //   });
+    // })
+    // .catch((err) => {
+    //   bot.sendMessage(msg.chat.id, err.message)
+    //   bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
+    // });
+
+    // axios
+    //   .get(
+    //     `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`
+    //   )
+    //   .then((res) => {
+    //     tokenPairs = msg.text.toString();
+    //     bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
+    //       reply_markup: {
+    //         keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
+    //       },
+    //     });
+    //   })
+    //   .catch((err) => {
+    //     bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
+    //   });
   }
 
   if (msg.text.toString().toLowerCase().indexOf("interval") !== -1) {
     tradingStatus = "start";
     intervalInvest = msg.text.toString().split(":")[1].trim();
-    ws.on("message", (message) => {
-      const marketData = JSON.parse(message);
-      const volume = marketData.k.v;
-      const taker_buy_base_asset_volume = marketData.k.V;
-      const taker_buy_quote_asset_volume = marketData.k.Q;
-      const close_price = marketData.k.c;
-      const start_time = marketData.k.t;
-      const close_time = marketData.k.T;
-      handleTrading(
-        volume,
-        taker_buy_base_asset_volume,
-        taker_buy_quote_asset_volume,
-        close_price,
-        start_time,
-        close_time
-      );
-    });
-
     bot.sendMessage(msg.chat.id, "Bot is running...");
   }
 });
 
-// setTimeout(() => {
-//   if (tradingStatus === "start") {
-//     ws.on("message", (message) => {
-//       const marketData = JSON.parse(message);
-//       const volume = marketData.k.v;
-//       const taker_buy_base_asset_volume = marketData.k.V;
-//       const taker_buy_quote_asset_volume = marketData.k.Q;
-//       const close_price = marketData.k.c;
-//       const start_time = marketData.k.t;
-//       const close_time = marketData.k.T;
-//       handleTrading(
-//         volume,
-//         taker_buy_base_asset_volume,
-//         taker_buy_quote_asset_volume,
-//         close_price,
-//         start_time,
-//         close_time
-//       );
-//     });
-//   }
-// }, 100);
+setTimeout(() => {
+  ws.on("message", (message) => {
+    const marketData = JSON.parse(message);
+    const volume = marketData.k.v;
+    const taker_buy_base_asset_volume = marketData.k.V;
+    const taker_buy_quote_asset_volume = marketData.k.Q;
+    const close_price = marketData.k.c;
+    const start_time = marketData.k.t;
+    const close_time = marketData.k.T;
+    handleTrading(
+      volume,
+      taker_buy_base_asset_volume,
+      taker_buy_quote_asset_volume,
+      close_price,
+      start_time,
+      close_time
+    );
+  });
+}, 100);
 
 const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
   const volume1 = parseFloat(volume);
@@ -292,25 +301,27 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
   const closePrice1 = parseFloat(closePrice);
   const rateOfUSDT = takerBase1;
   const rateOfAnother = takerQuote1 / closePrice1;
-  bot.sendMessage(chat_id, "haha");
-  bot.sendMessage(chat_id, rateOfAnother);
-  if (
-    (countingStepBalance === 3 || countingStepBalance === 2) &&
-    closePrice1 <= mileStone
-  ) {
-    // bán hết
-    bot.sendMessage(chat_id, `Bán hết step2 or step 3 - ${closePrice1}`);
-    countingStepBalance = 0;
-    mileStone = 0;
-    tradingStatus = "stop";
-  } else if (
-    countingStepBalance === 1 &&
-    closePrice1 <= mileStone - mileStone * 0.01
-  ) {
-    bot.sendMessage(chat_id, `Bán hết step 1 - ${closePrice1}`);
-    countingStepBalance = 0;
-    mileStone = 0;
-    tradingStatus = "stop";
+  if (tradingStatus === "start") {
+    bot.sendMessage(chat_id, "haha");
+    bot.sendMessage(chat_id, rateOfAnother);
+    if (
+      (countingStepBalance === 3 || countingStepBalance === 2) &&
+      closePrice1 <= mileStone
+    ) {
+      // bán hết
+      bot.sendMessage(chat_id, `Bán hết step2 or step 3 - ${closePrice1}`);
+      countingStepBalance = 0;
+      mileStone = 0;
+      tradingStatus = "stop";
+    } else if (
+      countingStepBalance === 1 &&
+      closePrice1 <= mileStone - mileStone * 0.01
+    ) {
+      bot.sendMessage(chat_id, `Bán hết step 1 - ${closePrice1}`);
+      countingStepBalance = 0;
+      mileStone = 0;
+      tradingStatus = "stop";
+    }
   }
 
   if (

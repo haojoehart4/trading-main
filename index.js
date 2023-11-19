@@ -325,8 +325,7 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
   }
 
   if (
-    new Date().getMinutes() === 58 ||
-    (new Date().getMinutes() === 59 && tradingStatus === "start")
+    (new Date().getMinutes() === 58 ||new Date().getMinutes() === 59) && tradingStatus === "start"
   ) {
     if (notificationVolume === "") {
       bot.sendMessage(

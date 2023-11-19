@@ -210,6 +210,7 @@ bot.on("message", (msg) => {
       });
     })
     .catch((err) => {
+      bot.sendMessage(msg.chat.id, err.message)
       bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
     });
 

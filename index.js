@@ -152,7 +152,7 @@ let tradingStatus = "stop";
 let tokenPairs = "";
 let intervalInvest = '';
 
-const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${tokenPairs.toLowerCase() ?? 'btcusdt'}@kline_${intervalInvest ?? '1h'}`);
+const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${'btcusdt'}@kline_${intervalInvest ?? '1h'}`);
 const targetTime = new Date();
 targetTime.setHours(targetTime.getHours() + 1);
 
@@ -199,20 +199,26 @@ bot.on("message", (msg) => {
     msg.text.toString().toLowerCase().indexOf("usdt") !== -1 &&
     msg.text.toString().toLowerCase().indexOf("pair") !== -1
   ) {
-
-    axios.get( `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`)
-    .then((res) => {
-      tokenPairs = msg.text.toString();
-      bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
-        reply_markup: {
-          keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
-        },
-      });
-    })
-    .catch((err) => {
-      bot.sendMessage(msg.chat.id, err.message)
-      bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
+    bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
+      reply_markup: {
+        keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
+      },
     });
+
+
+    // axios.get( `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`)
+    // .then((res) => {
+    //   tokenPairs = msg.text.toString();
+    //   bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
+    //     reply_markup: {
+    //       keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
+    //     },
+    //   });
+    // })
+    // .catch((err) => {
+    //   bot.sendMessage(msg.chat.id, err.message)
+    //   bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
+    // });
 
 
     // axios

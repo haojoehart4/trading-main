@@ -275,6 +275,10 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
   if (tradingStatus === "start") {
     bot.sendMessage(
       chat_id,
+      'haha'
+    );
+    bot.sendMessage(
+      chat_id,
       rateOfAnother
     );
     if (

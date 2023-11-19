@@ -153,9 +153,7 @@ let tokenPairs = "";
 let intervalInvest = "";
 
 const ws = new WebSocket(
-  `wss://stream.binance.com:9443/ws/btcusdt@kline_${
-    intervalInvest !== "" ? intervalInvest : "1h"
-  }`
+  `wss://stream.binance.com:9443/ws/btcusdt@kline_1h`
 );
 const targetTime = new Date();
 targetTime.setHours(targetTime.getHours() + 1);
@@ -185,7 +183,7 @@ bot.onText(/\/stop/, (msg) => {
   chat_id = 0;
   intervalInvest = "";
   bot.sendMessage(msg.chat.id, "Stop bot successfully");
-  ws.terminate()
+  ws.close()
   // ws.close()
 });
 

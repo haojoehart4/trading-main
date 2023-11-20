@@ -102,7 +102,8 @@ const binance = new Binance().options({
 
 // ---------------------------------TELEGRAM-BOT------------------------------------//
 const token = "6745247864:AAH6Bw7evYIJN6cAu5Hj6BmXhqeJWU5-yoM";
-const bot = new TelegramBot(token, { polling: true });
+const bot = new TelegramBot(token);
+bot.startPolling()
 
 // bot.onText(/\/start/, (msg) => {
 //   bot.sendMessage(msg.chat.id, 'Welcome to Mr.Hoa space')

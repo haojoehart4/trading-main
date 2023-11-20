@@ -181,6 +181,7 @@ bot.onText(/\/stop/, (msg) => {
   chat_id = 0;
   intervalInvest = "";
   bot.sendMessage(msg.chat.id, "Stop bot successfully");
+  ws.close()
 });
 
 bot.on("message", (msg) => {
@@ -256,25 +257,23 @@ bot.on("message", (msg) => {
       }`
     );
 
-    setInterval(() => {
-      ws.on("message", (message) => {
-        const marketData = JSON.parse(message);
-        const volume = marketData.k.v;
-        const taker_buy_base_asset_volume = marketData.k.V;
-        const taker_buy_quote_asset_volume = marketData.k.Q;
-        const close_price = marketData.k.c;
-        const start_time = marketData.k.t;
-        const close_time = marketData.k.T;
-        handleTrading(
-          volume,
-          taker_buy_base_asset_volume,
-          taker_buy_quote_asset_volume,
-          close_price,
-          start_time,
-          close_time
-        );
-      });
-    }, 60000)
+    ws.on("message", (message) => {
+      const marketData = JSON.parse(message);
+      const volume = marketData.k.v;
+      const taker_buy_base_asset_volume = marketData.k.V;
+      const taker_buy_quote_asset_volume = marketData.k.Q;
+      const close_price = marketData.k.c;
+      const start_time = marketData.k.t;
+      const close_time = marketData.k.T;
+      handleTrading(
+        volume,
+        taker_buy_base_asset_volume,
+        taker_buy_quote_asset_volume,
+        close_price,
+        start_time,
+        close_time
+      );
+    });
 
 
     ws.on("open", () => {
@@ -297,7 +296,7 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
   const closePrice1 = parseFloat(closePrice);
   const rateOfUSDT = takerBase1;
   const rateOfAnother = takerQuote1 / closePrice1;
-
+  // bot.sendMessage(chat_id, closePrice)
   bot.sendMessage(chat_id, `closePrice:: ${closePrice}`);
   if (tradingStatus === "start") {
     if (

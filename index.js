@@ -218,6 +218,9 @@ bot.on("message", (msg) => {
     msg.text.toString().toLowerCase().indexOf("usdt") !== -1 &&
     msg.text.toString().toLowerCase().indexOf("pair") !== -1
   ) {
+    //   const instance = axios.create({
+//     baseURL: `https://api.binance.com/api/v3`,
+//   });
     axios.get( `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1].trim().toUpperCase()}&limit=1`)
     .then((res) => {
       tokenPairs = msg.text.split(' ')[1].trim();

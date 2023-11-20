@@ -24,7 +24,6 @@ app.use(function (req, res, next) {
   next();
 });
 const TelegramBot = require("node-telegram-bot-api");
-const port = process.env.NODE_PORT;
 
 app.get("/", (req, res) => {
   res.send("Hello from Node.js!");
@@ -102,10 +101,8 @@ const binance = new Binance().options({
 
 // ---------------------------------TELEGRAM-BOT------------------------------------//
 const token = process.env.TELEGRAM_HAPPIER_TRADING_BOT;
-const bot = new TelegramBot(token, {
-  polling: true
-});
-
+const bot = new TelegramBot(token);
+bot.startPolling({restart: true})
 bot.deleteWebHook()
 // bot.onText(/\/start/, (msg) => {
 //   bot.sendMessage(msg.chat.id, 'Welcome to Mr.Hoa space')
@@ -178,13 +175,16 @@ bot.onText(/\/start/, (msg) => {
   );
 });
 
-bot.onText(/\/stop/, (msg) => {
+bot.onText(/\/stop/, async(msg) => {
   tradingStatus = "stop";
   tokenPairs = "";
   chat_id = 0;
   intervalInvest = "";
-  bot.sendMessage(msg.chat.id, "Stop bot successfully");
-  ws.close()
+  await bot.sendMessage(msg.chat.id, "Stop bot successfully");
+  if(bot.isPolling()) {
+    await bot.stopPolling({cancel: true})
+  }
+   ws.close()
 });
 
 bot.on("message", (msg) => {
@@ -394,6 +394,7 @@ const io = new Server(server, {
 
 // })
 
+const port = process.env.PORT || process.env.NODE_PORT
 server.listen(port, () => {
   console.log(`Let's trade now at ${port}`);
 });

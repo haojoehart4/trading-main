@@ -101,10 +101,12 @@ const binance = new Binance().options({
 // getKLines('LQTYUSDT', '1h', new Date('11/17/2023 03:00:00').getTime(),  new Date('11/17/2023 07:00:00').getTime())
 
 // ---------------------------------TELEGRAM-BOT------------------------------------//
-const token = "6745247864:AAH6Bw7evYIJN6cAu5Hj6BmXhqeJWU5-yoM";
-const bot = new TelegramBot(token);
-bot.startPolling()
+const token = process.env.TELEGRAM_HAPPIER_TRADING_BOT;
+const bot = new TelegramBot(token, {
+  polling: true
+});
 
+bot.deleteWebHook()
 // bot.onText(/\/start/, (msg) => {
 //   bot.sendMessage(msg.chat.id, 'Welcome to Mr.Hoa space')
 // })

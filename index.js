@@ -297,7 +297,6 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
   const rateOfUSDT = takerBase1;
   const rateOfAnother = takerQuote1 / closePrice1;
   // bot.sendMessage(chat_id, closePrice)
-  bot.sendMessage(chat_id, `closePrice:: ${closePrice}`);
   if (tradingStatus === "start") {
     if (
       (countingStepBalance === 3 || countingStepBalance === 2) &&

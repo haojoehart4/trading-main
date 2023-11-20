@@ -149,14 +149,10 @@ let mileStone = 0;
 let boolToCheck = false;
 let notificationVolume = "";
 let tradingStatus = "stop";
-let tokenPairs = "";
+let tokenPairs = "btcusdt";
 let intervalInvest = "";
+let ws = null;
 
-const ws = new WebSocket(
-  `wss://stream.binance.com:9443/ws/btcusdt@kline_${
-    intervalInvest !== "" ? intervalInvest : "1h"
-  }`
-);
 const targetTime = new Date();
 targetTime.setHours(targetTime.getHours() + 1);
 
@@ -218,37 +214,21 @@ bot.on("message", (msg) => {
     msg.text.toString().toLowerCase().indexOf("usdt") !== -1 &&
     msg.text.toString().toLowerCase().indexOf("pair") !== -1
   ) {
-    bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
-      reply_markup: {
-        keyboard: [
-          ["interval: 30m"],
-          ["interval: 1h"],
-          ["interval: 2h"],
-          ["interval: 4h"],
-          ["interval: 6h"],
-          ["interval: 8h"],
-          ["interval: 12h"],
-          ["interval: 1d"],
-          ["interval: 3d"],
-          ["interval: 1w"],
-          ["interval: 1M"],
-        ],
-      },
+    axios.get( `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1].trim().toUpperCase()}&limit=1`)
+    .then((res) => {
+      tokenPairs = msg.text.split(' ')[1].trim();
+      bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
+        reply_markup: {
+          keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
+        },
+      });
+    })
+    .catch((err) => {
+      bot.sendMessage(msg.chat.id, err.message)
+      bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
     });
 
-    // axios.get( `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text.split(' ')[1]}&limit=1`)
-    // .then((res) => {
-    //   tokenPairs = msg.text.toString();
-    //   bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
-    //     reply_markup: {
-    //       keyboard: [["interval: 30m"], ["interval: 1h"], ['interval: 2h'], ['interval: 4h'], ['interval: 6h'], ['interval: 8h'], ['interval: 12h'], ['interval: 1d'], ['interval: 3d'], ['interval: 1w'], ['interval: 1M']],
-    //     },
-    //   });
-    // })
-    // .catch((err) => {
-    //   bot.sendMessage(msg.chat.id, err.message)
-    //   bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
-    // });
+    
 
     // axios
     //   .get(
@@ -270,29 +250,45 @@ bot.on("message", (msg) => {
   if (msg.text.toString().toLowerCase().indexOf("interval") !== -1) {
     tradingStatus = "start";
     intervalInvest = msg.text.toString().split(":")[1].trim();
+    ws = new WebSocket(
+      `wss://stream.binance.com:9443/ws/${tokenPairs.toLowerCase()}@kline_${
+        intervalInvest !== "" ? intervalInvest : "1h"
+      }`
+    );
+
+    setInterval(() => {
+      ws.on("message", (message) => {
+        const marketData = JSON.parse(message);
+        const volume = marketData.k.v;
+        const taker_buy_base_asset_volume = marketData.k.V;
+        const taker_buy_quote_asset_volume = marketData.k.Q;
+        const close_price = marketData.k.c;
+        const start_time = marketData.k.t;
+        const close_time = marketData.k.T;
+        handleTrading(
+          volume,
+          taker_buy_base_asset_volume,
+          taker_buy_quote_asset_volume,
+          close_price,
+          start_time,
+          close_time
+        );
+      });
+    }, 60000)
+
+
+    ws.on("open", () => {
+      console.log("Websocket connection opened");
+    });
+    
+    ws.on("close", () => {
+      console.log("Websocket connection closed");
+    });
+
     bot.sendMessage(msg.chat.id, "Bot is running...");
   }
 });
 
-setTimeout(() => {
-  ws.on("message", (message) => {
-    const marketData = JSON.parse(message);
-    const volume = marketData.k.v;
-    const taker_buy_base_asset_volume = marketData.k.V;
-    const taker_buy_quote_asset_volume = marketData.k.Q;
-    const close_price = marketData.k.c;
-    const start_time = marketData.k.t;
-    const close_time = marketData.k.T;
-    handleTrading(
-      volume,
-      taker_buy_base_asset_volume,
-      taker_buy_quote_asset_volume,
-      close_price,
-      start_time,
-      close_time
-    );
-  });
-}, 100);
 
 const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
   const volume1 = parseFloat(volume);
@@ -301,9 +297,9 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
   const closePrice1 = parseFloat(closePrice);
   const rateOfUSDT = takerBase1;
   const rateOfAnother = takerQuote1 / closePrice1;
+
+  bot.sendMessage(chat_id, `closePrice:: ${closePrice}`);
   if (tradingStatus === "start") {
-    bot.sendMessage(chat_id, "haha");
-    bot.sendMessage(chat_id, rateOfAnother);
     if (
       (countingStepBalance === 3 || countingStepBalance === 2) &&
       closePrice1 <= mileStone
@@ -384,13 +380,7 @@ const handleTrading = async (volume, takerBase, takerQuote, closePrice) => {
   }
 };
 
-ws.on("open", () => {
-  console.log("Websocket connection opened");
-});
 
-ws.on("close", () => {
-  console.log("Websocket connection closed");
-});
 
 const server = require("http").createServer(app);
 const io = new Server(server, {

@@ -155,12 +155,12 @@ bot.on("polling_error", (msg) => console.log(msg));
 let chat_id = 0;
 let countingStepBalance = 0;
 let mileStone = 1;
-let priceStone1 = 0
-let priceStone2 = 0
-let priceStone3 = 0
-let priceBought1 = 0
-let priceBought2 = 0
-let priceBought3 = 0
+let priceStone1 = 0;
+let priceStone2 = 0;
+let priceStone3 = 0;
+let priceBought1 = 0;
+let priceBought2 = 0;
+let priceBought3 = 0;
 let defaultPriceStone2 = 0;
 let multipleStep2 = 1;
 let redFlag = false;
@@ -168,7 +168,8 @@ let tradingStatus = "stop";
 let tokenPairs = "btcusdt";
 let intervalInvest = { text: "1m", value: timeConvert("1m") };
 let boughtPrice = 0;
-let startTime = new Date();
+let isStopService = false;
+let interval = null;
 let ws = null;
 
 const targetTime = new Date();
@@ -194,10 +195,12 @@ bot.onText(/\/start/, (msg) => {
 });
 
 bot.onText(/\/stop/, async (msg) => {
-  tradingStatus = "stop";
   tokenPairs = "";
+  await bot.sendMessage(chat_id, "Stop bot successfully");
   chat_id = 0;
-  await bot.sendMessage(msg.chat.id, "Stop bot successfully");
+  if(interval) {
+    clearInterval(interval)
+  }
   if (bot.isPolling()) {
     await bot.stopPolling({ cancel: true });
   }
@@ -255,163 +258,46 @@ bot.on("message", (msg) => {
   if (msg.text.toString().toLowerCase().indexOf("price") !== -1) {
     const boughtPriceFloat = msg.text.split(":")[1].trim();
     boughtPrice = parseFloat(boughtPriceFloat);
-    priceStone1 = parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.02
-    priceStone2 = parseFloat(boughtPriceFloat)
-    priceStone3 = parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.02
+    priceStone1 =
+      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.02;
+    priceStone2 = parseFloat(boughtPriceFloat);
+    priceStone3 =
+      parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.02;
     // priceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
     // defaultPriceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
 
-    priceBought1 = parseFloat(boughtPriceFloat) * 0.02 + parseFloat(boughtPriceFloat)
-    priceBought2 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
+    priceBought1 =
+      parseFloat(boughtPriceFloat) * 0.02 + parseFloat(boughtPriceFloat);
+    priceBought2 =
+      parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat);
     // priceBought3 = parseFloat(boughtPriceFloat) * 0.06 + parseFloat(boughtPriceFloat)
 
     console.log("boughtPrice::", boughtPrice);
-    bot.sendMessage(msg.chat.id, "Please set the interval to invest.", {
-      reply_markup: {
-        keyboard: [
-          ["interval: 1m", "interval: 2m"],
-          ["interval: 3m", "interval: 5m"],
-          ["interval: 7m", "interval: 9m"],
-          ["interval: 11m", "interval: 30m"],
-          ["interval: 1h", "interval: 2h"],
-          ["interval: 4h", "interval: 6h"],
-          ["interval: 8h", "interval: 12h"],
-        ],
-      },
-    });
-  }
-
-  if (msg.text.toString().toLowerCase().indexOf("interval") !== -1) {
     tradingStatus = "start";
-    intervalInvest = {
-      text: msg.text.toString().split(":")[1].trim(),
-      value: timeConvert(msg.text.toString().split(":")[1].trim()),
-    };
-    timeConvert(intervalInvest.text).then(async(res) => {
-      const connectAndListen = () => {
-        ws = new WebSocket(
-          `wss://stream.binance.com:9443/ws/${tokenPairs.toLowerCase()}@kline_${
-            intervalInvest.text
-          }`
-        );
+    const connectAndListen = () => {
+      ws = new WebSocket(
+        `wss://stream.binance.com:9443/ws/${tokenPairs.toLowerCase()}@kline_1m`
+      );
 
-        ws.on("open", () => {
-          console.log("Connect open")
-        });
+      ws.on("open", () => {
+        console.log("Connect open");
+      });
 
-        //multiple signal in one time => redFlag = true => multiple ws.close() => 1st one close then the second can not close the websocket
-         ws.on("message", async (message) => {
-          if (!redFlag) {
-            const marketData = JSON.parse(message);
-            const close_price = parseFloat(marketData.k.c);
-            await handleTrading(close_price);
-          } else {
-            if(ws.isReadyState === 1) {
-              ws.close();
-              redFlag = false;
-            }
+      //multiple signal in one time => redFlag = true => multiple ws.close() => 1st one close then the second can not close the websocket
+      ws.on("message", async (message) => {
+        if (!redFlag) {
+          const marketData = JSON.parse(message);
+          const close_price = parseFloat(marketData.k.c);
+          await handleTrading(close_price);
+        } else {
+          if (ws.isReadyState === 1) {
+            ws.close();
+            redFlag = false;
           }
-        });
-
-        // if(redFlag) {
-        //   ws.close()
-        //   bot.sendMessage(chat_id, `close connect:: ${redFlag}`)
-        //   redFlag = false
-        // }
-
-        // setTimeout(() => {
-        //   ws.close()
-        //   bot.sendMessage(chat_id, `close connect:: ${redFlag}`)
-        // }, 10000);
-      };
-      setInterval(connectAndListen, 40000);
-    });
-    // ws = new WebSocket(
-    //   `wss://stream.binance.com:9443/ws/${tokenPairs.toLowerCase()}@kline_${intervalInvest}`
-    // );
-
-    // ws.on("message", (message) => {
-    //   const marketData = JSON.parse(message);
-    //   const volume = marketData.k.v;
-    //   const taker_buy_base_asset_volume = marketData.k.V;
-    //   const taker_buy_quote_asset_volume = marketData.k.Q;
-    //   const close_price = marketData.k.c;
-    //   const start_time = marketData.k.t;
-    //   const close_time = marketData.k.T;
-    //   handleTrading(
-    //     volume,
-    //     taker_buy_base_asset_volume,
-    //     taker_buy_quote_asset_volume,
-    //     close_price,
-    //     start_time,
-    //     close_time
-    //   );
-    // });
-
-    //   ws.on("message", async(message) => {
-    //     const marketData = JSON.parse(message);
-    //     const volume = marketData.k.v;
-    //     const taker_buy_base_asset_volume = marketData.k.V;
-    //     const taker_buy_quote_asset_volume = marketData.k.Q;
-    //     const close_price = marketData.k.c;
-    //     const start_time = marketData.k.t;
-    //     const close_time = marketData.k.T;
-    //     handleTrading(
-    //       volume,
-    //       taker_buy_base_asset_volume,
-    //       taker_buy_quote_asset_volume,
-    //       close_price,
-    //       start_time,
-    //       close_time
-    //     );
-    //     await bot.sendMessage(msg.chat.id, close_price)
-    //     .catch(err => {
-    //       console.log('haha', err.response.data.message)
-    //     })
-
-    //     setTimeout(() => {
-    //       ws.close()
-    //     }, 20000);
-    //   });
-
-    // }
-
-    // setInterval(() => {
-    //   if(tradingStatus === 'start') {
-    //     ws.close()
-    //   }
-    // }, 30000)
-    // ws = new WebSocket(
-    //   `wss://stream.binance.com:9443/ws/${tokenPairs.toLowerCase()}@kline_${
-    //     intervalInvest !== "" ? intervalInvest : "1h"
-    //   }`
-    // );
-
-    // ws.on("message", (message) => {
-    //   const marketData = JSON.parse(message);
-    //   const volume = marketData.k.v;
-    //   const taker_buy_base_asset_volume = marketData.k.V;
-    //   const taker_buy_quote_asset_volume = marketData.k.Q;
-    //   const close_price = marketData.k.c;
-    //   const start_time = marketData.k.t;
-    //   const close_time = marketData.k.T;
-    //   handleTrading(
-    //     volume,
-    //     taker_buy_base_asset_volume,
-    //     taker_buy_quote_asset_volume,
-    //     close_price,
-    //     start_time,
-    //     close_time
-    //   );
-    // });
-
-    // ws.on("open", () => {
-    //   console.log("Websocket connection opened");
-    // });
-
-    // ws.on("close", () => {
-    //   console.log("Websocket connection closed");
-    // });
+        }
+      });
+    };
+    interval = setInterval(connectAndListen, 40000);
   }
 
   if (msg.text.toString().toLowerCase().indexOf("find new token") !== -1) {
@@ -419,34 +305,44 @@ bot.on("message", (msg) => {
   }
 });
 
-
 const handleTrading = async (close_price) => {
   //buy case
-  if(close_price >= priceBought1 && mileStone === 1) {
-    mileStone += 1
-    console.log('mileStone::', mileStone)
-  } else if(close_price >= priceBought2 && mileStone === 2) {
+  if (close_price >= priceBought1 && mileStone === 1) {
+    mileStone += 1;
+    console.log("mileStone::", mileStone);
+  } else if (close_price >= priceBought2 && mileStone === 2) {
     // mileStone += 1
-    console.log('mileStone::', mileStone)
-    const futurePrice = close_price / priceBought2 - 1
-    if(futurePrice >= 0.005 * multipleStep2) {
-      priceBought2 = defaultPriceStone2 + defaultPriceStone2 * 0.005 
-    }
-
-  } 
-
-  //sold case
-  if(close_price <= priceStone1 ) {
-    bot.sendMessage(chat_id, `Sell all tokens with price ${close_price} at default position`)
-  } else {
-    if(close_price <= priceStone2 && mileStone === 1) {
-      bot.sendMessage(chat_id, `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`)
-    } else if(close_price <= priceStone3 && mileStone === 2) {
-      bot.sendMessage(chat_id, `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`)
+    console.log("mileStone::", mileStone);
+    const futurePrice = close_price / priceBought2 - 1;
+    if (futurePrice >= 0.005 * multipleStep2) {
+      priceBought2 = defaultPriceStone2 + defaultPriceStone2 * 0.005;
     }
   }
 
-  redFlag = true
+  //sold case
+  if (close_price <= priceStone1) {
+    bot.sendMessage(
+      chat_id,
+      `Sell all tokens with price ${close_price} at default position`
+    );
+    tradingStatus = "stop";
+  } else {
+    if (close_price <= priceStone2 && mileStone === 1) {
+      bot.sendMessage(
+        chat_id,
+        `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
+      );
+      tradingStatus = "stop";
+    } else if (close_price <= priceStone3 && mileStone === 2) {
+      bot.sendMessage(
+        chat_id,
+        `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
+      );
+      tradingStatus = "stop";
+    }
+  }
+
+  redFlag = true;
   // bot.sendMessage(chat_id, data.close_price);
   // const volume = parseFloat(data.volume);
   // const quoteVolume = parseFloat(data.quoteVolume);

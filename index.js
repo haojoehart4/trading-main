@@ -436,12 +436,12 @@ const handleTrading = async (close_price) => {
   } 
 
   //sold case
-  if(close_price <= boughtPrice) {
+  if(close_price <= priceStone1 ) {
     bot.sendMessage(chat_id, `Sell all tokens with price ${close_price} at default position`)
   } else {
-    if(close_price <= priceStone1 && mileStone === 1) {
+    if(close_price <= priceStone2 && mileStone === 1) {
       bot.sendMessage(chat_id, `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`)
-    } else if(close_price <= priceStone2 && mileStone === 2) {
+    } else if(close_price <= priceStone3 && mileStone === 2) {
       bot.sendMessage(chat_id, `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`)
     }
   }

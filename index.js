@@ -274,28 +274,30 @@ bot.on("message", (msg) => {
 
     console.log("boughtPrice::", boughtPrice);
     tradingStatus = "start";
-    const connectAndListen = () => {
-      ws = new WebSocket(
-        `wss://stream.binance.com:9443/ws/${tokenPairs.toLowerCase()}@kline_1m`
-      );
+    const connectAndListen = async() => {
+      const result = await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${tokenPairs.toLowerCase()}`)
+      handleTrading(result?.price)
 
-      ws.on("open", () => {
-        console.log("Connect open");
-      });
+      // ws = new WebSocket(
+      //   `wss://stream.binance.com:9443/ws/${tokenPairs.toLowerCase()}@kline_1m`
+      // );
 
-      //multiple signal in one time => redFlag = true => multiple ws.close() => 1st one close then the second can not close the websocket
-      ws.on("message", async (message) => {
-        if (!redFlag) {
-          const marketData = JSON.parse(message);
-          const close_price = parseFloat(marketData.k.c);
-          await handleTrading(close_price);
-        } else {
-          if (ws.isReadyState === 1) {
-            ws.close();
-            redFlag = false;
-          }
-        }
-      });
+      // ws.on("open", () => {
+      //   console.log("Connect open");
+      // });
+
+      // ws.on("message", async (message) => {
+      //   if (!redFlag) {
+      //     const marketData = JSON.parse(message);
+      //     const close_price = parseFloat(marketData.k.c);
+      //     await handleTrading(close_price);
+      //   } else {
+      //     if (ws.isReadyState === 1) {
+      //       ws.close();
+      //       redFlag = false;
+      //     }
+      //   }
+      // });
     };
     interval = setInterval(connectAndListen, 20000);
   }

@@ -276,7 +276,7 @@ bot.on("message", (msg) => {
     tradingStatus = "start";
     const connectAndListen = async() => {
       const result = await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${tokenPairs.toUpperCase()}`)
-      handleTrading(result?.price)
+      handleTrading(result?.data?.price)
 
       // ws = new WebSocket(
       //   `wss://stream.binance.com:9443/ws/${tokenPairs.toLowerCase()}@kline_1m`

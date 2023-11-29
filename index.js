@@ -275,7 +275,7 @@ bot.on("message", (msg) => {
     console.log("boughtPrice::", boughtPrice);
     tradingStatus = "start";
     const connectAndListen = async() => {
-      const result = await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${tokenPairs.toLowerCase()}`)
+      const result = await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${tokenPairs.toUpperCase()}`)
       handleTrading(result?.price)
 
       // ws = new WebSocket(

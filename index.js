@@ -163,7 +163,6 @@ let priceBought2 = 0;
 let priceBought3 = 0;
 let defaultPriceStone2 = 0;
 let multipleStep2 = 1;
-let redFlag = false;
 let tradingStatus = "stop";
 let tokenPairs = "btcusdt";
 let intervalInvest = { text: "1m", value: timeConvert("1m") };
@@ -207,7 +206,6 @@ bot.onText(/\/stop/, async (msg) => {
     priceBought2 = 0;
     defaultPriceStone2 = 0;
     multipleStep2 = 1;
-    redFlag = false;
     boughtPrice = 0;
     interval = null;
     clearInterval(interval);
@@ -326,12 +324,13 @@ const handleTrading = async (close_price) => {
   if (close_price >= priceBought1 && mileStone === 1) {
     mileStone += 1;
     console.log("mileStone::", mileStone);
-  } else if (close_price >= priceBought2 && mileStone === 2) {
+  } else if (close_price >= priceBought2 && (mileStone === 2 || mileStone === 3)) {
     // mileStone += 1
     console.log("mileStone::", mileStone);
     const futurePrice = close_price / priceBought2 - 1;
     if (futurePrice >= 0.005 * multipleStep2) {
       priceBought2 = defaultPriceStone2 + defaultPriceStone2 * 0.005;
+      mileStone = 3
     }
   }
 
@@ -343,13 +342,13 @@ const handleTrading = async (close_price) => {
     );
     clearInterval(interval);
   } else {
-    if (close_price <= priceStone2 && mileStone === 1) {
+    if (close_price <= priceStone2 && mileStone === 2) {
       bot.sendMessage(
         chat_id,
         `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
       );
       clearInterval(interval);
-    } else if (close_price <= priceStone3 && mileStone === 2) {
+    } else if (close_price <= priceStone3 && mileStone === 3) {
       bot.sendMessage(
         chat_id,
         `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
@@ -358,7 +357,6 @@ const handleTrading = async (close_price) => {
     }
   }
 
-  redFlag = true;
   // bot.sendMessage(chat_id, data.close_price);
   // const volume = parseFloat(data.volume);
   // const quoteVolume = parseFloat(data.quoteVolume);

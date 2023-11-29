@@ -198,8 +198,19 @@ bot.onText(/\/stop/, async (msg) => {
   tokenPairs = "";
   await bot.sendMessage(msg.chat.id, "Stop bot successfully");
   chat_id = 0;
-  if(interval) {
-    clearInterval(interval)
+  if (interval) {
+    mileStone = 1;
+    priceStone1 = 0;
+    priceStone2 = 0;
+    priceStone3 = 0;
+    priceBought1 = 0;
+    priceBought2 = 0;
+    defaultPriceStone2 = 0;
+    multipleStep2 = 1;
+    redFlag = false;
+    boughtPrice = 0;
+    interval = null;
+    clearInterval(interval);
   }
   if (bot.isPolling()) {
     await bot.stopPolling({ cancel: true });
@@ -274,9 +285,11 @@ bot.on("message", (msg) => {
 
     console.log("boughtPrice::", boughtPrice);
     tradingStatus = "start";
-    const connectAndListen = async() => {
-      const result = await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${tokenPairs.toUpperCase()}`)
-      handleTrading(result?.data?.price)
+    const connectAndListen = async () => {
+      const result = await axios.get(
+        `https://api.binance.com/api/v3/ticker/price?symbol=${tokenPairs.toUpperCase()}`
+      );
+      handleTrading(result?.data?.price);
 
       // ws = new WebSocket(
       //   `wss://stream.binance.com:9443/ws/${tokenPairs.toLowerCase()}@kline_1m`
@@ -309,7 +322,7 @@ bot.on("message", (msg) => {
 
 const handleTrading = async (close_price) => {
   //buy case
-  bot.sendMessage(chat_id, close_price)
+  bot.sendMessage(chat_id, close_price);
   if (close_price >= priceBought1 && mileStone === 1) {
     mileStone += 1;
     console.log("mileStone::", mileStone);
@@ -328,20 +341,20 @@ const handleTrading = async (close_price) => {
       chat_id,
       `Sell all tokens with price ${close_price} at default position`
     );
-    tradingStatus = "stop";
+    clearInterval(interval);
   } else {
     if (close_price <= priceStone2 && mileStone === 1) {
       bot.sendMessage(
         chat_id,
         `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
       );
-      tradingStatus = "stop";
+      clearInterval(interval);
     } else if (close_price <= priceStone3 && mileStone === 2) {
       bot.sendMessage(
         chat_id,
         `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
       );
-      tradingStatus = "stop";
+      clearInterval(interval);
     }
   }
 

@@ -307,6 +307,7 @@ bot.on("message", (msg) => {
 
 const handleTrading = async (close_price) => {
   //buy case
+  bot.sendMessage(chat_id, close_price)
   if (close_price >= priceBought1 && mileStone === 1) {
     mileStone += 1;
     console.log("mileStone::", mileStone);

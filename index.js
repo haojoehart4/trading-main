@@ -196,7 +196,7 @@ bot.onText(/\/start/, (msg) => {
 
 bot.onText(/\/stop/, async (msg) => {
   tokenPairs = "";
-  await bot.sendMessage(chat_id, "Stop bot successfully");
+  await bot.sendMessage(msg.chat.id, "Stop bot successfully");
   chat_id = 0;
   if(interval) {
     clearInterval(interval)
@@ -297,7 +297,7 @@ bot.on("message", (msg) => {
         }
       });
     };
-    interval = setInterval(connectAndListen, 40000);
+    interval = setInterval(connectAndListen, 20000);
   }
 
   if (msg.text.toString().toLowerCase().indexOf("find new token") !== -1) {

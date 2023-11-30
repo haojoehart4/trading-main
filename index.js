@@ -264,10 +264,10 @@ bot.on("message", (msg) => {
 });
 
 const handleTrading = async (close_price) => {
-  binance.balance((error, balances) => {
-    if (error) return console.error(error.body);
-    bot.sendMessage(chat_id, balances.USDT.available);
-  });
+  // binance.balance((error, balances) => {
+  //   if (error) return console.error(error.body);
+  //   bot.sendMessage(chat_id, balances.USDT.available);
+  // });
 
   //buy case
   // bot.sendMessage(chat_id, close_price);

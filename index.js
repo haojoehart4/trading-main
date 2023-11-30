@@ -113,48 +113,6 @@ const bot = new TelegramBot(token, {
 
 bot.on("polling_error", (msg) => console.log(msg));
 
-// binance.useServerTime();
-// binance.balance((error, balances) => {
-//     if ( error ) return console.error(error.body);
-//     console.info("balances()", balances.USDT.available);
-//     console.info("BNB balance: ", balances.BNB.available);
-// });
-
-// bot.onText(/\/start/, (msg) => {
-//   bot.sendMessage(msg.chat.id, 'Welcome to Mr.Hoa space')
-// })
-// bot.on('message', (msg) => {
-//   const greetingText = 'hi'
-//   if(msg.text.toString().toLowerCase().indexOf(greetingText) === 0) {
-//     bot.sendMessage(msg.chat.id, 'I am a bot which was created by Mr.Hoa, what do you want now?', {
-//       "reply_markup": {
-//         "keyboard": [["Find new token to invest"], ["Get price of BTC now"], ["Get balance information"]]
-//       }
-//     })
-//   }
-
-//   if(msg.text.toString().toLowerCase().indexOf('btc') !== -1){
-//     axios.get(`https://api.binance.com/api/v3/avgPrice?symbol=BTCUSDT`)
-//     .then((res) => {
-//       bot.sendMessage(msg.chat.id, `Average price of Bitcoin now is: ${res.data.price} usd`)
-//     })
-//   }
-
-//   if(msg.text.toString().toLowerCase().indexOf('balance') !== -1) {
-//     binance.balance((error, balances) => {
-//       if ( error ) return console.error(error);
-//       let balanceResult = []
-//       for(const x in balances) {
-//         if(parseFloat(balances[x].available) > 0) {
-//           balanceResult.push(`${x}: ${balances[x].available}`)
-//         }
-//       }
-//       const responseToUser = balanceResult.join(', ')
-//       bot.sendMessage(msg.chat.id, `Your balance information here: ${responseToUser}`)
-//     });
-//   }
-// });
-
 // ---------------------------------TELEGRAM-BOT------------------------------------//
 
 // -------------------------- Binance Code Example ---------------
@@ -307,11 +265,6 @@ bot.on("message", (msg) => {
   }
 });
 
-// binance.balance()
-//     .then((data) => {
-//       console.log(data)
-//     })
-//     .catch((err) => console.log(err.message));
 
 const handleTrading = async (close_price) => {
   binance.balance((error, balances) => {

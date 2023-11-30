@@ -194,7 +194,7 @@ bot.onText(/\/start/, (msg) => {
 });
 
 bot.onText(/\/stop/, async (msg) => {
-  tokenPairs = "";
+  tokenPairs = "BTCUSDT";
   await bot.sendMessage(msg.chat.id, "Stop bot successfully");
   chat_id = 0;
   if (interval) {
@@ -284,31 +284,14 @@ bot.on("message", (msg) => {
     console.log("boughtPrice::", boughtPrice);
     tradingStatus = "start";
     const connectAndListen = async () => {
-      const result = await axios.get(
-        `https://api.binance.com/api/v3/ticker/price?symbol=${tokenPairs.toUpperCase()}`
-      );
-      handleTrading(result?.data?.price);
-
-      // ws = new WebSocket(
-      //   `wss://stream.binance.com:9443/ws/${tokenPairs.toLowerCase()}@kline_1m`
-      // );
-
-      // ws.on("open", () => {
-      //   console.log("Connect open");
-      // });
-
-      // ws.on("message", async (message) => {
-      //   if (!redFlag) {
-      //     const marketData = JSON.parse(message);
-      //     const close_price = parseFloat(marketData.k.c);
-      //     await handleTrading(close_price);
-      //   } else {
-      //     if (ws.isReadyState === 1) {
-      //       ws.close();
-      //       redFlag = false;
-      //     }
-      //   }
-      // });
+      try {
+        const result = await axios.get(
+          `https://api.binance.com/api/v3/ticker/price?symbol=${tokenPairs.toUpperCase()}`
+        );
+        handleTrading(result?.data?.price);
+      } catch (e){
+        console.log(e?.response?.data?.message)
+      }
     };
     interval = setInterval(connectAndListen, 20000);
   }

@@ -75,7 +75,7 @@ const binance = new Binance().options({
 //   }
 //   console.log("Total buy volume: ", totalBuyVolume);
 //   console.log("Total sell volume: ", totalSellVolume);
-// });
+// }); 
 
 // binance.balance((error, balances) => {
 //   if ( error ) return console.error(error);

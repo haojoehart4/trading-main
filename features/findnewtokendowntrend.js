@@ -9,11 +9,7 @@ const handleFilterCondition = async (
   const result = await axios.get(
     `https://api.binance.com/api/v3/ticker?windowSize=${intervalTime}&symbols=${usdtPairString}`
   );
-  const highPercentChange = await result?.data?.filter((x) =>
-    _.isArray(filterParam)
-      ? parseFloat(x.priceChangePercent) > filterParam[0] && parseFloat(x.priceChangePercent) < filterParam[1]
-      : parseFloat(x.priceChangePercent) > filterParam
-  );
+  const highPercentChange = await result?.data?.filter((x) => parseFloat(x.priceChangePercent) < filterParam);
   const arr = highPercentChange?.map((x) => {
     return {
       symbol: x.symbol,
@@ -72,22 +68,22 @@ const handleSeperateSymbols = async (arr, isGetAPI = false) => {
   return childArray;
 };
 
-const findnewtoken = (telegramBot, chat_id) => {
+const findnewtokendowntrend = (telegramBot, chat_id) => {
   axios
     .get(`https://api.binance.com/api/v3/exchangeInfo`)
     .then(async (res) => {
       let childArray = [];
       let tokenPairsPriceChange = [];
 
-      //filter 12 hours
+      //filter 8 hours
       childArray = await handleSeperateSymbols(res?.data, true);
-      const loopResult12h = await handleLoop(childArray, [-5, -1], "8h");
+      const loopResult12h = await handleLoop(childArray, -4, "8h");
       usdtPairsString = loopResult12h.usdt_pair_string;
       tokenPairsPriceChange = loopResult12h.token_pairs_price_change;
 
-      //filter 2 hours
+      //filter 4 hours
       childArray = await handleSeperateSymbols(tokenPairsPriceChange);
-      const loopResult = await handleLoop(childArray, 0.3, "2h");
+      const loopResult = await handleLoop(childArray, -2, "4h");
       usdtPairsString = loopResult.usdt_pair_string;
       tokenPairsPriceChange = loopResult.token_pairs_price_change;
 
@@ -97,9 +93,7 @@ const findnewtoken = (telegramBot, chat_id) => {
         let sellVol4Hrs = 0;
         let buyVol2Hrs = 0;
         let sellVol2Hrs = 0;
-        // const result = await axios.get(
-        //   `https://api.binance.com/api/v3/trades?symbol=${i.symbol}&limit=1000`
-        // );
+
         const coupleFilterLatest = {startTime: new Date().getTime() - (2 * 60 * 60* 1000), endTime: new Date().getTime()}
 
         const coupleFilter4HsAgo = {startTime: new Date().getTime() - (4 * 60 * 60* 1000), endTime: new Date().getTime() - (2 * 60 * 60* 1000)}
@@ -128,7 +122,7 @@ const findnewtoken = (telegramBot, chat_id) => {
 
         const past2HoursRate = buyVol2Hrs / sellVol2Hrs
 
-        if(past2HoursRate > past4HoursRate && buyVol2Hrs > buyVol4Hrs && sellVol2Hrs < sellVol4Hrs) {
+        if(past2HoursRate < past4HoursRate && buyVol2Hrs < buyVol4Hrs && sellVol2Hrs > sellVol4Hrs) {
           responseResult.push(
             `${i.symbol}: sold volume in 4h: (${sellVol4Hrs}), bought volume in 4h: (${buyVol4Hrs}), sold volume in 2h: (${sellVol2Hrs}), bought volume in 2h: (${buyVol2Hrs}), percent_change: ${i.price_percent_change} \n`
           )
@@ -143,4 +137,4 @@ const findnewtoken = (telegramBot, chat_id) => {
     });
 };
 
-module.exports = findnewtoken;
+module.exports = findnewtokendowntrend;

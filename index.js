@@ -26,7 +26,9 @@ app.use(function (req, res, next) {
 });
 const TelegramBot = require("node-telegram-bot-api");
 const { timeConvert } = require("./utils/helper");
-const findnewtoken = require("./features/findnewtoken");
+const findnewtokenUpTrend = require("./features/findnewtokenuptrend");
+const findnewtokenDownTrend = require("./features/findnewtokendowntrend");
+
 
 app.get("/", (req, res) => {
   res.send("Hello from Node.js!");
@@ -128,13 +130,9 @@ let priceBought2 = 0;
 let priceBought3 = 0;
 let defaultPriceStone2 = 0;
 let multipleStep2 = 1;
-let tradingStatus = "stop";
 let tokenPairs = "btcusdt";
-let intervalInvest = { text: "1m", value: timeConvert("1m") };
 let boughtPrice = 0;
-let isStopService = false;
 let interval = null;
-let ws = null;
 
 const targetTime = new Date();
 targetTime.setHours(targetTime.getHours() + 1);
@@ -161,6 +159,26 @@ bot.onText(/\/start/, (msg) => {
 bot.onText(/\/stop/, async (msg) => {
   tokenPairs = "BTCUSDT";
   await bot.sendMessage(msg.chat.id, "Stop bot successfully");
+  resetDefault()
+  // mileStone = 1;
+  // priceStone1 = 0;
+  // priceStone2 = 0;
+  // priceStone3 = 0;
+  // priceBought1 = 0;
+  // priceBought2 = 0;
+  // defaultPriceStone2 = 0;
+  // multipleStep2 = 1;
+  // boughtPrice = 0;
+  // if(interval) {
+  //   clearInterval(interval); 
+  // }
+  if (bot.isPolling()) {
+    await bot.stopPolling({ cancel: true });
+  }
+  //  ws.close()
+});
+
+const resetDefault = () => {
   mileStone = 1;
   priceStone1 = 0;
   priceStone2 = 0;
@@ -170,13 +188,11 @@ bot.onText(/\/stop/, async (msg) => {
   defaultPriceStone2 = 0;
   multipleStep2 = 1;
   boughtPrice = 0;
-  interval = null;
-  clearInterval(interval); 
-  if (bot.isPolling()) {
-    await bot.stopPolling({ cancel: true });
+  chat_id = null
+  if(interval) {
+    clearInterval(interval); 
   }
-  //  ws.close()
-});
+}
 
 bot.on("message", (msg) => {
   if (msg.text.toString().toLowerCase().indexOf("yes") !== -1) {
@@ -259,7 +275,28 @@ bot.on("message", (msg) => {
   }
 
   if (msg.text.toString().toLowerCase().indexOf("find new token") !== -1) {
-    findnewtoken(bot, chat_id);
+    bot.sendMessage(
+      msg.chat.id,
+      "Select kind of trading you want",
+      {
+        reply_markup: {
+          keyboard: [
+            [
+              "Downtrend",
+              "Uptrend",
+            ],
+          ],
+        },
+      }
+    );  
+  }
+
+  if (msg.text.toString().toLowerCase().indexOf("downtrend") !== -1 || msg.text.toString().toLowerCase().indexOf("uptrend") !== -1) {
+    if(msg.text.toString().toLowerCase() === 'downtrend') {
+      findnewtokenDownTrend(bot, chat_id)
+    } else {
+      findnewtokenUpTrend(bot, chat_id);
+    }
   }
 });
 
@@ -278,14 +315,12 @@ const handleTrading = async (close_price) => {
     close_price >= priceBought2 && 
     (mileStone === 2 || mileStone === 3)
   ) {
-    // mileStone += 1
-    
     const futurePrice = close_price / priceBought2 - 1;
     if (futurePrice >= 0.005 * multipleStep2) {
       priceBought2 = defaultPriceStone2 + defaultPriceStone2 * 0.005;
+      multipleStep2 += 1
       mileStone = 3;
     }
-    bot.sendMessage(chat_id, `mileStone: ${mileStone}`)
   }
 
   //sold case
@@ -294,118 +329,22 @@ const handleTrading = async (close_price) => {
       chat_id,
       `Sell all tokens with price ${close_price} at default position`
     );
-    clearInterval(interval);
+    resetDefault()
   } else {
     if (close_price <= priceStone2 && mileStone === 2) {
       bot.sendMessage(
         chat_id,
         `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
       );
-      clearInterval(interval);
+      resetDefault()
     } else if (close_price <= priceStone3 && mileStone === 3) {
       bot.sendMessage(
         chat_id,
         `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
       );
-      clearInterval(interval);
+      resetDefault()
     }
   }
-
-  // bot.sendMessage(chat_id, data.close_price);
-  // const volume = parseFloat(data.volume);
-  // const quoteVolume = parseFloat(data.quoteVolume);
-  // const weightedAvgPrice = parseFloat(data.weightedAvgPrice);
-  // let quantityBuy = 0;
-  // let quantitySell = 0;
-  // let lastPrice = 0;
-  // for (let i = 0; i < data.length; i++) {
-  //   if(i === data.length - 1) {
-  //     lastPrice =  parseFloat(data[i].price)
-  //   }
-  //   if(data[i]?.isBuyerMaker) {
-  //     quantityBuy += parseFloat(data[i]?.qty)
-  //   } else {
-  //     quantitySell += parseFloat(data[i]?.qty)
-  //   }
-  // }
-  // bot.sendMessage(chat_id, `quantityBuy: ${quantityBuy}, quantitySell: ${quantitySell}, lastPrice: ${lastPrice}`)
-  // bot.sendMessage(chat_id, closePrice)
-  // if (tradingStatus === "start") {
-  //   if (
-  //     (countingStepBalance === 3 || countingStepBalance === 2) &&
-  //     closePrice1 <= mileStone
-  //   ) {
-  //     // bán hết
-  //     bot.sendMessage(chat_id, `Bán hết step2 or step 3 - ${closePrice1}`);
-  //     countingStepBalance = 0;
-  //     mileStone = 0;
-  //     tradingStatus = "stop";
-  //   } else if (
-  //     countingStepBalance === 1 &&
-  //     closePrice1 <= mileStone - mileStone * 0.01
-  //   ) {
-  //     bot.sendMessage(chat_id, `Bán hết step 1 - ${closePrice1}`);
-  //     countingStepBalance = 0;
-  //     mileStone = 0;
-  //     tradingStatus = "stop";
-  //   }
-  // }
-  // if (
-  //   (new Date().getMinutes() === 58 ||new Date().getMinutes() === 59) && tradingStatus === "start"
-  // ) {
-  //   if (notificationVolume === "") {
-  //     bot.sendMessage(
-  //       chat_id,
-  //       `base_asset_volume: ${rateOfAnother} - quote_asset_volume: ${rateOfUSDT}`
-  //     );
-  //     notificationVolume = `base_asset_volume: ${rateOfAnother} - quote_asset_volume: ${rateOfUSDT}`;
-  //     bot.sendMessage(chat_id, "Reset boolToCheck and notificationVolume?", {
-  //       reply_markup: {
-  //         keyboard: [["Yes"], ["No"]],
-  //       },
-  //     });
-  //   }
-  //   if (rateOfAnother - rateOfUSDT > 0 && !boolToCheck) {
-  //     if (countingStepBalance < 3) {
-  //       if (countingStepBalance === 0 || countingStepBalance === 1) {
-  //         if (countingStepBalance === 0) {
-  //           //mua 25%
-  //           mileStone = closePrice1 - closePrice1 * 0.01;
-  //           boolToCheck = true;
-  //           bot.sendMessage(
-  //             chat_id,
-  //             `Giá lúc mua lần 1: ${closePrice1} - Khối lượng mua 25%`
-  //           );
-  //         } else {
-  //           //mua 25%
-  //           mileStone = closePrice1 - closePrice1 * 0.005;
-  //           boolToCheck = true;
-  //           bot.sendMessage(
-  //             chat_id,
-  //             `Giá lúc mua lần 2: ${closePrice1} - Khối lượng mua 25% - Update milestone lên ${mileStone}`
-  //           );
-  //         }
-  //       } else if (
-  //         countingStepBalance === 2 &&
-  //         1.002 < rateOfAnother / rateOfUSDT < 1.1
-  //       ) {
-  //         mileStone = closePrice1 - closePrice1 * 0.005;
-  //         boolToCheck = true;
-  //         bot.sendMessage(
-  //           chat_id,
-  //           `Giá lúc mua lần 3: ${closePrice1} - Khối lượng mua 50% - Update milestone lên ${mileStone}`
-  //         );
-  //         isEndBalance = true;
-  //         // mua 50%
-  //       }
-  //       countingStepBalance += 1;
-  //     } else {
-  //       if (rateOfAnother - rateOfUSDT > 0) {
-  //         mileStone = closePrice1 - closePrice1 * 0.005;
-  //       }
-  //     }
-  //   }
-  // }
 };
 
 const server = require("http").createServer(app);

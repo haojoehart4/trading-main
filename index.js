@@ -196,7 +196,6 @@ bot.onText(/\/start/, (msg) => {
 bot.onText(/\/stop/, async (msg) => {
   tokenPairs = "BTCUSDT";
   await bot.sendMessage(msg.chat.id, "Stop bot successfully");
-  chat_id = 0;
   if (interval) {
     mileStone = 1;
     priceStone1 = 0;

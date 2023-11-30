@@ -273,18 +273,19 @@ const handleTrading = async (close_price) => {
   // bot.sendMessage(chat_id, close_price);
   if (close_price >= priceBought1 && mileStone === 1) {
     mileStone += 1;
-    console.log("mileStone::", mileStone);
+    bot.sendMessage(chat_id, `mileStone: ${mileStone}`)
   } else if (
-    close_price >= priceBought2 &&
+    close_price >= priceBought2 && 
     (mileStone === 2 || mileStone === 3)
   ) {
     // mileStone += 1
-    console.log("mileStone::", mileStone);
+    
     const futurePrice = close_price / priceBought2 - 1;
     if (futurePrice >= 0.005 * multipleStep2) {
       priceBought2 = defaultPriceStone2 + defaultPriceStone2 * 0.005;
       mileStone = 3;
     }
+    bot.sendMessage(chat_id, `mileStone: ${mileStone}`)
   }
 
   //sold case

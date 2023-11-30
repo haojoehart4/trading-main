@@ -35,6 +35,9 @@ app.get("/", (req, res) => {
 const binance = new Binance().options({
   APIKEY: process.env.BINACE_API_KEY,
   APISECRET: process.env.BINANCE_API_SECRET_KEY,
+  useServerTime: true,
+  reconnect: true,
+  family: 4,
 });
 
 // binance.futuresPrices()
@@ -110,10 +113,10 @@ const bot = new TelegramBot(token, {
 
 bot.on("polling_error", (msg) => console.log(msg));
 
-binance.useServerTime();
+// binance.useServerTime();
 // binance.balance((error, balances) => {
-//     if ( error ) return console.error(error);
-//     console.info("balances()", balances);
+//     if ( error ) return console.error(error.body);
+//     console.info("balances()", balances.USDT.available);
 //     console.info("BNB balance: ", balances.BNB.available);
 // });
 
@@ -312,9 +315,9 @@ bot.on("message", (msg) => {
 
 const handleTrading = async (close_price) => {
   binance.balance((error, balances) => {
-    if (error) return console.error(error); 
+    if ( error ) return console.error(error.body);
     bot.sendMessage(chat_id, balances.USDT.available)
-  });
+});
 
   //buy case
   // bot.sendMessage(chat_id, close_price);

@@ -288,8 +288,8 @@ bot.on("message", (msg) => {
           `https://api.binance.com/api/v3/ticker/price?symbol=${tokenPairs.toUpperCase()}`
         );
         handleTrading(result?.data?.price);
-      } catch (e){
-        console.log(e?.response?.data?.message)
+      } catch (e) {
+        console.log(e?.response?.data?.message);
       }
     };
     interval = setInterval(connectAndListen, 20000);
@@ -301,18 +301,26 @@ bot.on("message", (msg) => {
 });
 
 const handleTrading = async (close_price) => {
+  binance
+    .futuresAccount()
+    .then((data) => bot.sendMessage(chat_id, data))
+    .catch((err) => console.log(err));
+
   //buy case
   // bot.sendMessage(chat_id, close_price);
   if (close_price >= priceBought1 && mileStone === 1) {
     mileStone += 1;
     console.log("mileStone::", mileStone);
-  } else if (close_price >= priceBought2 && (mileStone === 2 || mileStone === 3)) {
+  } else if (
+    close_price >= priceBought2 &&
+    (mileStone === 2 || mileStone === 3)
+  ) {
     // mileStone += 1
     console.log("mileStone::", mileStone);
     const futurePrice = close_price / priceBought2 - 1;
     if (futurePrice >= 0.005 * multipleStep2) {
       priceBought2 = defaultPriceStone2 + defaultPriceStone2 * 0.005;
-      mileStone = 3
+      mileStone = 3;
     }
   }
 

@@ -171,7 +171,7 @@ bot.onText(/\/stop/, async (msg) => {
   multipleStep2 = 1;
   boughtPrice = 0;
   interval = null;
-  clearInterval(interval);
+  clearInterval(interval); 
   if (bot.isPolling()) {
     await bot.stopPolling({ cancel: true });
   }

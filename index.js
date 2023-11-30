@@ -34,11 +34,9 @@ app.get("/", (req, res) => {
 
 const binance = new Binance().options({
   APIKEY:
-    process.env.BINACE_API_KEY ||
-    "8Xktj5lcXas28Zwa9GY1n9cRFV8xAd9yrWX8pxzWKvZaqt7GOGesqm03x8NkSERO",
+    process.env.BINACE_API_KEY,
   APISECRET:
-    process.env.BINANCE_API_SECRET_KEY ||
-    "d5fJ0KFH2AO6iHUqkhyO9pUCkUIonrg4YLwW8KerXrw2ezQhgmHzlcR8Uv2SLZPQ",
+    process.env.BINANCE_API_SECRET_KEY,
 });
 
 // binance.futuresPrices()
@@ -301,9 +299,11 @@ bot.on("message", (msg) => {
 });
 
 const handleTrading = async (close_price) => {
-  binance
-    .futuresAccount()
-    .then((data) => bot.sendMessage(chat_id, `${data}`))
+  await binance
+    .balance()
+    .then((data) => {
+      bot.sendMessage(chat_id, data)
+    })
     .catch((err) => console.log(err));
 
   //buy case

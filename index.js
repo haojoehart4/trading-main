@@ -161,19 +161,17 @@ bot.onText(/\/start/, (msg) => {
 bot.onText(/\/stop/, async (msg) => {
   tokenPairs = "BTCUSDT";
   await bot.sendMessage(msg.chat.id, "Stop bot successfully");
-  if (interval) {
-    mileStone = 1;
-    priceStone1 = 0;
-    priceStone2 = 0;
-    priceStone3 = 0;
-    priceBought1 = 0;
-    priceBought2 = 0;
-    defaultPriceStone2 = 0;
-    multipleStep2 = 1;
-    boughtPrice = 0;
-    interval = null;
-    clearInterval(interval);
-  }
+  mileStone = 1;
+  priceStone1 = 0;
+  priceStone2 = 0;
+  priceStone3 = 0;
+  priceBought1 = 0;
+  priceBought2 = 0;
+  defaultPriceStone2 = 0;
+  multipleStep2 = 1;
+  boughtPrice = 0;
+  interval = null;
+  clearInterval(interval);
   if (bot.isPolling()) {
     await bot.stopPolling({ cancel: true });
   }
@@ -265,12 +263,11 @@ bot.on("message", (msg) => {
   }
 });
 
-
 const handleTrading = async (close_price) => {
   binance.balance((error, balances) => {
-    if ( error ) return console.error(error.body);
-    bot.sendMessage(chat_id, balances.USDT.available)
-});
+    if (error) return console.error(error.body);
+    bot.sendMessage(chat_id, balances.USDT.available);
+  });
 
   //buy case
   // bot.sendMessage(chat_id, close_price);

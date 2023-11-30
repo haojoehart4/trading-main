@@ -312,7 +312,7 @@ bot.on("message", (msg) => {
 
 const handleTrading = async (close_price) => {
   binance.balance((error, balances) => {
-    if (error) return console.error(error);
+    if (error) return console.error(error); 
     bot.sendMessage(chat_id, balances.USDT.available)
   });
 

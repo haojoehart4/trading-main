@@ -304,7 +304,7 @@ const handleTrading = async (close_price) => {
     .then((data) => {
       bot.sendMessage(chat_id, data)
     })
-    .catch((err) => console.log(err));
+    .catch((err) => console.log(err.response.data.message));
 
   //buy case
   // bot.sendMessage(chat_id, close_price);

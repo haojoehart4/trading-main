@@ -303,7 +303,7 @@ bot.on("message", (msg) => {
 const handleTrading = async (close_price) => {
   binance
     .futuresAccount()
-    .then((data) => bot.sendMessage(chat_id, data))
+    .then((data) => bot.sendMessage(chat_id, `${data}`))
     .catch((err) => console.log(err));
 
   //buy case

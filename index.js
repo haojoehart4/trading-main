@@ -33,10 +33,8 @@ app.get("/", (req, res) => {
 });
 
 const binance = new Binance().options({
-  APIKEY:
-    process.env.BINACE_API_KEY,
-  APISECRET:
-    process.env.BINANCE_API_SECRET_KEY,
+  APIKEY: process.env.BINACE_API_KEY,
+  APISECRET: process.env.BINANCE_API_SECRET_KEY,
 });
 
 // binance.futuresPrices()
@@ -75,7 +73,7 @@ const binance = new Binance().options({
 //   }
 //   console.log("Total buy volume: ", totalBuyVolume);
 //   console.log("Total sell volume: ", totalSellVolume);
-// }); 
+// });
 
 // binance.balance((error, balances) => {
 //   if ( error ) return console.error(error);
@@ -111,6 +109,14 @@ const bot = new TelegramBot(token, {
 });
 
 bot.on("polling_error", (msg) => console.log(msg));
+
+binance.useServerTime();
+// binance.balance((error, balances) => {
+//     if ( error ) return console.error(error);
+//     console.info("balances()", balances);
+//     console.info("BNB balance: ", balances.BNB.available);
+// });
+
 // bot.onText(/\/start/, (msg) => {
 //   bot.sendMessage(msg.chat.id, 'Welcome to Mr.Hoa space')
 // })
@@ -298,13 +304,17 @@ bot.on("message", (msg) => {
   }
 });
 
+// binance.balance()
+//     .then((data) => {
+//       console.log(data)
+//     })
+//     .catch((err) => console.log(err.message));
+
 const handleTrading = async (close_price) => {
-  await binance
-    .balance()
-    .then((data) => {
-      bot.sendMessage(chat_id, data)
-    })
-    .catch((err) => console.log(err.response.data.message));
+  binance.balance((error, balances) => {
+    if (error) return console.error(error);
+    bot.sendMessage(chat_id, balances.USDT.available)
+  });
 
   //buy case
   // bot.sendMessage(chat_id, close_price);

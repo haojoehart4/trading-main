@@ -132,6 +132,8 @@ let multipleStep2 = 1;
 let tokenPairs = "btcusdt";
 let boughtPrice = 0;
 let interval = null;
+let stepToFetchAPI = 0;
+let prevRate = 0;
 
 const targetTime = new Date();
 targetTime.setHours(targetTime.getHours() + 1);
@@ -176,6 +178,7 @@ const resetDefault = () => {
   multipleStep2 = 1;
   boughtPrice = 0;
   chat_id = null;
+  stepToFetchAPI = 0;
   if (interval) {
     clearInterval(interval);
   }
@@ -233,17 +236,17 @@ bot.on("message", (msg) => {
     const boughtPriceFloat = msg.text.split(":")[1].trim();
     boughtPrice = parseFloat(boughtPriceFloat);
     priceStone1 =
-      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.02;
+      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.04;
     priceStone2 = parseFloat(boughtPriceFloat);
     priceStone3 =
-      parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.02;
+      parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.04;
     // priceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
     // defaultPriceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
 
     priceBought1 =
-      parseFloat(boughtPriceFloat) * 0.02 + parseFloat(boughtPriceFloat);
-    priceBought2 =
       parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat);
+    priceBought2 =
+      parseFloat(boughtPriceFloat) * 0.06 + parseFloat(boughtPriceFloat);
     // priceBought3 = parseFloat(boughtPriceFloat) * 0.06 + parseFloat(boughtPriceFloat)
 
     console.log("boughtPrice::", boughtPrice);
@@ -285,19 +288,29 @@ const handleTrading = async (close_price) => {
   //   if (error) return console.error(error.body);
   //   bot.sendMessage(chat_id, balances.USDT.available);
   // });
+  // let allowToBuy = false
+  // stepToFetchAPI += 1
+  // if(stepToFetchAPI === 3) {
+  //   await axios.get(
+  //     `https://api.binance.com/api/v3/historicalTrades?symbol=${tokenPairs.toUpperCase()}&limit=500`
+  //   )
+  //   .then((res) => {
 
+  //   })
+  //   stepToFetchAPI = 0
+  // }
   //buy case
   // bot.sendMessage(chat_id, close_price);
   if (close_price >= priceBought1 && mileStone === 1) {
     mileStone += 1;
-    bot.sendMessage(chat_id, `mileStone: ${mileStone}`);
+    bot.sendMessage(chat_id, `mua 25% lần 2`);
   } else if (
     close_price >= priceBought2 &&
     (mileStone === 2 || mileStone === 3)
   ) {
     const futurePrice = close_price / priceBought2 - 1;
-    if (futurePrice >= 0.005 * multipleStep2) {
-      priceBought2 = defaultPriceStone2 + defaultPriceStone2 * 0.005;
+    if (futurePrice >= 0.02 * multipleStep2) {
+      priceBought2 = defaultPriceStone2 + defaultPriceStone2 * 0.02;
       multipleStep2 += 1;
       mileStone = 3;
     }

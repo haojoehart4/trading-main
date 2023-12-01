@@ -29,7 +29,6 @@ const { timeConvert } = require("./utils/helper");
 const findnewtokenUpTrend = require("./features/findnewtokenuptrend");
 const findnewtokenDownTrend = require("./features/findnewtokendowntrend");
 
-
 app.get("/", (req, res) => {
   res.send("Hello from Node.js!");
 });
@@ -159,19 +158,7 @@ bot.onText(/\/start/, (msg) => {
 bot.onText(/\/stop/, async (msg) => {
   tokenPairs = "BTCUSDT";
   await bot.sendMessage(msg.chat.id, "Stop bot successfully");
-  resetDefault()
-  // mileStone = 1;
-  // priceStone1 = 0;
-  // priceStone2 = 0;
-  // priceStone3 = 0;
-  // priceBought1 = 0;
-  // priceBought2 = 0;
-  // defaultPriceStone2 = 0;
-  // multipleStep2 = 1;
-  // boughtPrice = 0;
-  // if(interval) {
-  //   clearInterval(interval); 
-  // }
+  resetDefault();
   if (bot.isPolling()) {
     await bot.stopPolling({ cancel: true });
   }
@@ -188,11 +175,11 @@ const resetDefault = () => {
   defaultPriceStone2 = 0;
   multipleStep2 = 1;
   boughtPrice = 0;
-  chat_id = null
-  if(interval) {
-    clearInterval(interval); 
+  chat_id = null;
+  if (interval) {
+    clearInterval(interval);
   }
-}
+};
 
 bot.on("message", (msg) => {
   if (msg.text.toString().toLowerCase().indexOf("yes") !== -1) {
@@ -260,7 +247,6 @@ bot.on("message", (msg) => {
     // priceBought3 = parseFloat(boughtPriceFloat) * 0.06 + parseFloat(boughtPriceFloat)
 
     console.log("boughtPrice::", boughtPrice);
-    tradingStatus = "start";
     const connectAndListen = async () => {
       try {
         const result = await axios.get(
@@ -275,25 +261,19 @@ bot.on("message", (msg) => {
   }
 
   if (msg.text.toString().toLowerCase().indexOf("find new token") !== -1) {
-    bot.sendMessage(
-      msg.chat.id,
-      "Select kind of trading you want",
-      {
-        reply_markup: {
-          keyboard: [
-            [
-              "Downtrend",
-              "Uptrend",
-            ],
-          ],
-        },
-      }
-    );  
+    bot.sendMessage(msg.chat.id, "Select kind of trading you want", {
+      reply_markup: {
+        keyboard: [["Downtrend", "Uptrend"]],
+      },
+    });
   }
 
-  if (msg.text.toString().toLowerCase().indexOf("downtrend") !== -1 || msg.text.toString().toLowerCase().indexOf("uptrend") !== -1) {
-    if(msg.text.toString().toLowerCase() === 'downtrend') {
-      findnewtokenDownTrend(bot, chat_id)
+  if (
+    msg.text.toString().toLowerCase().indexOf("downtrend") !== -1 ||
+    msg.text.toString().toLowerCase().indexOf("uptrend") !== -1
+  ) {
+    if (msg.text.toString().toLowerCase() === "downtrend") {
+      findnewtokenDownTrend(bot, chat_id);
     } else {
       findnewtokenUpTrend(bot, chat_id);
     }
@@ -310,15 +290,15 @@ const handleTrading = async (close_price) => {
   // bot.sendMessage(chat_id, close_price);
   if (close_price >= priceBought1 && mileStone === 1) {
     mileStone += 1;
-    bot.sendMessage(chat_id, `mileStone: ${mileStone}`)
+    bot.sendMessage(chat_id, `mileStone: ${mileStone}`);
   } else if (
-    close_price >= priceBought2 && 
+    close_price >= priceBought2 &&
     (mileStone === 2 || mileStone === 3)
   ) {
     const futurePrice = close_price / priceBought2 - 1;
     if (futurePrice >= 0.005 * multipleStep2) {
       priceBought2 = defaultPriceStone2 + defaultPriceStone2 * 0.005;
-      multipleStep2 += 1
+      multipleStep2 += 1;
       mileStone = 3;
     }
   }
@@ -329,20 +309,20 @@ const handleTrading = async (close_price) => {
       chat_id,
       `Sell all tokens with price ${close_price} at default position`
     );
-    resetDefault()
+    resetDefault();
   } else {
     if (close_price <= priceStone2 && mileStone === 2) {
       bot.sendMessage(
         chat_id,
         `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
       );
-      resetDefault()
+      resetDefault();
     } else if (close_price <= priceStone3 && mileStone === 3) {
       bot.sendMessage(
         chat_id,
         `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
       );
-      resetDefault()
+      resetDefault();
     }
   }
 };

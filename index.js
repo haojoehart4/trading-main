@@ -132,8 +132,6 @@ let multipleStep2 = 1;
 let tokenPairs = "btcusdt";
 let boughtPrice = 0;
 let interval = null;
-let stepToFetchAPI = 0;
-let prevRate = 0;
 
 const targetTime = new Date();
 targetTime.setHours(targetTime.getHours() + 1);
@@ -178,7 +176,6 @@ const resetDefault = () => {
   multipleStep2 = 1;
   boughtPrice = 0;
   chat_id = null;
-  stepToFetchAPI = 0;
   if (interval) {
     clearInterval(interval);
   }
@@ -288,17 +285,7 @@ const handleTrading = async (close_price) => {
   //   if (error) return console.error(error.body);
   //   bot.sendMessage(chat_id, balances.USDT.available);
   // });
-  // let allowToBuy = false
-  // stepToFetchAPI += 1
-  // if(stepToFetchAPI === 3) {
-  //   await axios.get(
-  //     `https://api.binance.com/api/v3/historicalTrades?symbol=${tokenPairs.toUpperCase()}&limit=500`
-  //   )
-  //   .then((res) => {
 
-  //   })
-  //   stepToFetchAPI = 0
-  // }
   //buy case
   // bot.sendMessage(chat_id, close_price);
   if (close_price >= priceBought1 && mileStone === 1) {

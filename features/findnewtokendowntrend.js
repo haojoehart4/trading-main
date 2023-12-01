@@ -174,7 +174,7 @@ const findnewtokendowntrend = (telegramBot, chat_id) => {
             endTime = new Date(value?.T).getTime()
           }
 
-          if(endTime - startTime <= 1800000) {
+          if(endTime - startTime <= 1200000) {
             isHot = true
           }
         }

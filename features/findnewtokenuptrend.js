@@ -93,32 +93,21 @@ const findnewtokenuptrend = (telegramBot, chat_id) => {
 
       let responseResult = [];
       for (let i of tokenPairsPriceChange) {
-        let buyVol4Hrs = 0;
-        let sellVol4Hrs = 0;
         let buyVol2Hrs = 0;
         let sellVol2Hrs = 0;
+        let buyVol1Hr = 0;
+        let sellVol1Hr = 0;
+        let isHot = false
         // const result = await axios.get(
         //   `https://api.binance.com/api/v3/trades?symbol=${i.symbol}&limit=1000`
         // );
-        const coupleFilterLatest = {startTime: new Date().getTime() - (2 * 60 * 60* 1000), endTime: new Date().getTime()}
+        const coupleFilterLatest = {startTime: new Date().getTime() - (1 * 60 * 60* 1000), endTime: new Date().getTime()}
 
-        const coupleFilter4HsAgo = {startTime: new Date().getTime() - (4 * 60 * 60* 1000), endTime: new Date().getTime() - (2 * 60 * 60* 1000)}
+        const coupleFilter4HsAgo = {startTime: new Date().getTime() - (2 * 60 * 60* 1000), endTime: new Date().getTime() - (1 * 60 * 60* 1000)}
 
         const resultPast4Hours = await axios.get(`https://api.binance.com/api/v3/aggTrades?symbol=${i.symbol}&limit=1000&startTime=${coupleFilter4HsAgo?.startTime}&endTime=${coupleFilter4HsAgo?.endTime}`)
 
         for (let x of resultPast4Hours?.data) {
-          if (x?.m) {
-            sellVol4Hrs += parseFloat(x?.q);
-          } else {
-            buyVol4Hrs += parseFloat(x?.q);
-          }
-        }
-
-        const past4HoursRate = buyVol4Hrs / sellVol4Hrs
-
-        const resultPast2Hours = await axios.get(`https://api.binance.com/api/v3/aggTrades?symbol=${i.symbol}&limit=1000&startTime=${coupleFilterLatest?.startTime}&endTime=${coupleFilterLatest?.endTime}`)
-
-        for (let x of resultPast2Hours?.data) {
           if (x?.m) {
             sellVol2Hrs += parseFloat(x?.q);
           } else {
@@ -126,11 +115,36 @@ const findnewtokenuptrend = (telegramBot, chat_id) => {
           }
         }
 
-        const past2HoursRate = buyVol2Hrs / sellVol2Hrs
+        const past2HrsRate = buyVol2Hrs / sellVol2Hrs
 
-        if(past2HoursRate > past4HoursRate && buyVol2Hrs > buyVol4Hrs && sellVol2Hrs < sellVol4Hrs) {
+        const resultPast2Hours = await axios.get(`https://api.binance.com/api/v3/aggTrades?symbol=${i.symbol}&limit=1000&startTime=${coupleFilterLatest?.startTime}&endTime=${coupleFilterLatest?.endTime}`)
+
+        for (let [i, value] of resultPast2Hours?.data?.entries()) {
+          if (value?.m) {
+            sellVol1Hr += parseFloat(value?.q);
+          } else {
+            buyVol1Hr += parseFloat(value?.q);
+          }
+
+          let startTime = 0;
+          let endTime = 0
+
+          if(i === 0) {
+            startTime = new Date(value?.T).getTime()
+          } else if(i === resultPast2Hours?.data?.length -1) {
+            endTime = new Date(value?.T).getTime()
+          }
+
+          if(endTime - startTime <= 1200000) {
+            isHot = true
+          }
+        }
+
+        const past1HrRate = buyVol1Hr / sellVol1Hr
+
+        if(past1HrRate > past2HrsRate && buyVol1Hr > buyVol2Hrs && sellVol1Hr < sellVol2Hrs) {
           responseResult.push(
-            `${i.symbol}: sold volume in 4h: (${sellVol4Hrs}), bought volume in 4h: (${buyVol4Hrs}), sold volume in 2h: (${sellVol2Hrs}), bought volume in 2h: (${buyVol2Hrs}), percent_change: ${i.price_percent_change} \n`
+            `${i.symbol}: sold volume in 4h: (${sellVol2Hrs}), bought volume in 4h: (${buyVol2Hrs}), sold volume in 2h: (${sellVol1Hr}), bought volume in 2h: (${buyVol1Hr}), percent_change: ${i.price_percent_change} \n`
           )
         }
       }

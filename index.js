@@ -127,7 +127,7 @@ let priceStone3 = 0;
 let priceBought1 = 0;
 let priceBought2 = 0;
 let priceBought3 = 0;
-let defaultPriceStone2 = 0;
+let defaultPriceStone3 = 0;
 let multipleStep2 = 1;
 let tokenPairs = "btcusdt";
 let boughtPrice = 0;
@@ -138,6 +138,7 @@ targetTime.setHours(targetTime.getHours() + 1);
 
 bot.onText(/\/start/, (msg) => {
   chat_id = msg.chat.id;
+  console.log('chat_id', chat_id)
   bot.sendMessage(
     msg.chat.id,
     "Hello mate, wish your day will be greater than yesterday. Can i help you ?",
@@ -172,7 +173,7 @@ const resetDefault = () => {
   priceStone3 = 0;
   priceBought1 = 0;
   priceBought2 = 0;
-  defaultPriceStone2 = 0;
+  defaultPriceStone3 = 0;
   multipleStep2 = 1;
   boughtPrice = 0;
   chat_id = null;
@@ -233,17 +234,18 @@ bot.on("message", (msg) => {
     const boughtPriceFloat = msg.text.split(":")[1].trim();
     boughtPrice = parseFloat(boughtPriceFloat);
     priceStone1 =
-      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.04;
+      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.02;
     priceStone2 = parseFloat(boughtPriceFloat);
     priceStone3 =
       parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.04;
+    defaultPriceStone3 = parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.04;
     // priceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
     // defaultPriceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
 
     priceBought1 =
-      parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat);
+      parseFloat(boughtPriceFloat) * 0.02 + parseFloat(boughtPriceFloat);
     priceBought2 =
-      parseFloat(boughtPriceFloat) * 0.06 + parseFloat(boughtPriceFloat);
+      parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat);
     // priceBought3 = parseFloat(boughtPriceFloat) * 0.06 + parseFloat(boughtPriceFloat)
 
     console.log("boughtPrice::", boughtPrice);
@@ -295,11 +297,18 @@ const handleTrading = async (close_price) => {
     close_price >= priceBought2 &&
     (mileStone === 2 || mileStone === 3)
   ) {
-    const futurePrice = close_price / priceBought2 - 1;
-    if (futurePrice >= 0.02 * multipleStep2) {
-      priceBought2 = defaultPriceStone2 + defaultPriceStone2 * 0.02;
-      multipleStep2 += 1;
-      mileStone = 3;
+    if(mileStone === 2) {
+      bot.sendMessage(chat_id, 'mua 50%')
+      mileStone = 3
+    } else {
+      const futurePrice = close_price / priceBought2 - 1;
+      if (futurePrice >= 0.01 * multipleStep2) {
+        priceBought2 = defaultPriceStone3 + defaultPriceStone3 * 0.01;
+        priceStone3 = defaultPriceStone3 + defaultPriceStone3 * 0.01;
+        bot.sendMessage(chat_id, `upgrade priceStone3 to ${priceStone3}`)
+        multipleStep2 += 1;
+        mileStone = 3;
+      }
     }
   }
 

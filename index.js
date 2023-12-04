@@ -234,11 +234,11 @@ bot.on("message", (msg) => {
     const boughtPriceFloat = msg.text.split(":")[1].trim();
     boughtPrice = parseFloat(boughtPriceFloat);
     priceStone1 =
-      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.0205;
+      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.0201;
     priceStone2 = parseFloat(boughtPriceFloat);
     priceStone3 =
-      parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.041;
-    defaultPriceStone3 = parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.0405;
+      parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.0401;
+    defaultPriceStone3 = parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.0401;
     // priceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
     // defaultPriceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
 

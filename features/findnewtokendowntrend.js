@@ -9,12 +9,7 @@ const handleFilterCondition = async (
   const result = await axios.get(
     `https://api.binance.com/api/v3/ticker?windowSize=${intervalTime}&symbols=${usdtPairString}`
   );
-  const highPercentChange = await result?.data?.filter((x) =>
-    _.isArray(filterParam)
-      ? parseFloat(x.priceChangePercent) > filterParam[0] &&
-        parseFloat(x.priceChangePercent) < filterParam[1]
-      : Math.sign(filterParam) === 1 ? parseFloat(x.priceChangePercent) > filterParam : parseFloat(x.priceChangePercent) < filterParam
-  );
+  const highPercentChange = await result?.data?.filter((x) => parseFloat(x.priceChangePercent) < filterParam);
   const arr = highPercentChange?.map((x) => {
     return {
       symbol: x.symbol,
@@ -73,132 +68,116 @@ const handleSeperateSymbols = async (arr, isGetAPI = false) => {
   return childArray;
 };
 
-const findnewtokendowntrend = (telegramBot, chat_id) => {
+const refetchGetVol = async (coupleFilters) => {
+  let isComplete = false;
+  let sellVol = coupleFilters.sellVol;
+  let buyVol = coupleFilters.buyVol;
+  const result = await axios.get(
+    `https://api.binance.com/api/v3/aggTrades?symbol=${coupleFilters.symbol}&limit=1000&startTime=${coupleFilters?.startTime}&endTime=${coupleFilters?.endTime}`
+  );
+  isComplete =
+    (await result?.data?.filter((x) => x.T < coupleFilters?.endTime)?.length) <
+    1000
+      ? true
+      : false;
+
+  await result?.data?.map((x) => {
+    if (x?.m) {
+      sellVol += parseFloat(x?.q);
+    } else {
+      buyVol += parseFloat(x?.q);
+    }
+  });
+
+  if (isComplete) {
+    return { isComplete: isComplete, sellVol: sellVol, buyVol: buyVol };
+  }
+  return refetchGetVol({
+    startTime: result?.data.at(-1)?.T,
+    endTime: coupleFilters?.endTime,
+    symbol: coupleFilters?.symbol,
+    buyVol: buyVol,
+    sellVol: sellVol,
+  });
+};
+
+const findnewtokenuptrend = (telegramBot, chat_id) => {
   axios
     .get(`https://api.binance.com/api/v3/exchangeInfo`)
     .then(async (res) => {
       let childArray = [];
       let tokenPairsPriceChange = [];
 
-      //filter 2 days
+      //filter 4 hours
       childArray = await handleSeperateSymbols(res?.data, true);
-      const loopResult2d = await handleLoop(childArray, -5, "2d");
-      usdtPairsString = loopResult2d.usdt_pair_string;
-      tokenPairsPriceChange = loopResult2d.token_pairs_price_change;
-
-      //filter 1 day
+      const loopResult4Hrs = await handleLoop(childArray, -5, "8h");
+      usdtPairsString = loopResult4Hrs.usdt_pair_string;
+      tokenPairsPriceChange = loopResult4Hrs.token_pairs_price_change;
+      //filter 2 hours
       childArray = await handleSeperateSymbols(tokenPairsPriceChange);
-      const loopResult1d = await handleLoop(childArray, [-5, -1], "1d");
-      usdtPairsString = loopResult1d.usdt_pair_string;
-      tokenPairsPriceChange = loopResult1d.token_pairs_price_change;
+      const loopResult = await handleLoop(childArray, -3, "4h");
+      usdtPairsString = loopResult.usdt_pair_string;
+      tokenPairsPriceChange = loopResult.token_pairs_price_change;
 
-      //filter 4h
-      // childArray = await handleSeperateSymbols(tokenPairsPriceChange);
-      // const loopResult = await handleLoop(childArray, 0.1, "4h");
-      // usdtPairsString = loopResult.usdt_pair_string;
-      // tokenPairsPriceChange = loopResult.token_pairs_price_change;
-
-      let responseResult = [];
+      let responseResultUp = [];
+      let responseResultDown = [];
       for (let i of tokenPairsPriceChange) {
-        let buyVol6Hrs = 0;
-        let sellVol6Hrs = 0;
         let buyVol2Hrs = 0;
         let sellVol2Hrs = 0;
         let buyVol1Hr = 0;
         let sellVol1Hr = 0;
-        let isHot = false
-
         const coupleFilterLatest = {
           startTime: new Date().getTime() - 1 * 60 * 60 * 1000,
           endTime: new Date().getTime(),
         };
 
-        const coupleFilter4HsAgo = {
+        const coupleFilter2HrsAgo = {
           startTime: new Date().getTime() - 2 * 60 * 60 * 1000,
           endTime: new Date().getTime() - 1 * 60 * 60 * 1000,
         };
 
-        // const coupleFilter6HsAgo = {
-        //   startTime: new Date().getTime() - 6 * 60 * 60 * 1000,
-        //   endTime: new Date().getTime() - 4 * 60 * 60 * 1000,
-        // }
+        //2hrs
+        const result2HrsAgo = await refetchGetVol({
+          ...coupleFilter2HrsAgo,
+          symbol: i.symbol,
+          buyVol: buyVol2Hrs,
+          sellVol: sellVol2Hrs,
+        });
+        const past2HrsRate =
+           result2HrsAgo.buyVol / result2HrsAgo.sellVol;
 
-        // const resultPast6Hours = await axios.get(
-        //   `https://api.binance.com/api/v3/aggTrades?symbol=${i.symbol}&limit=1000&startTime=${coupleFilter6HsAgo?.startTime}&endTime=${coupleFilter6HsAgo?.endTime}`
-        // );
-
-        // for (let x of resultPast6Hours?.data) {
-        //   if (x?.m) {
-        //     sellVol6Hrs += parseFloat(x?.q);
-        //   } else {
-        //     buyVol6Hrs += parseFloat(x?.q);
-        //   }
-        // }
-
-        // const past6HrsRate = buyVol6Hrs / sellVol6Hrs;
-
-
-        const resultPast4Hours = await axios.get(
-          `https://api.binance.com/api/v3/aggTrades?symbol=${i.symbol}&limit=1000&startTime=${coupleFilter4HsAgo?.startTime}&endTime=${coupleFilter4HsAgo?.endTime}`
-        );
-
-        for (let x of resultPast4Hours?.data) {
-          if (x?.m) {
-            sellVol2Hrs += parseFloat(x?.q);
-          } else {
-            buyVol2Hrs += parseFloat(x?.q);
-          }
-        }
-
-        const past2HoursRate = buyVol2Hrs / sellVol2Hrs;
-
-
-
-        const resultPast2Hours = await axios.get(
-          `https://api.binance.com/api/v3/aggTrades?symbol=${i.symbol}&limit=1000&startTime=${coupleFilterLatest?.startTime}&endTime=${coupleFilterLatest?.endTime}`
-        );
-
-        for (let [i, value] of resultPast2Hours?.data?.entries()) {
-          if (value?.m) {
-            sellVol1Hr += parseFloat(value?.q);
-          } else {
-            buyVol1Hr += parseFloat(value?.q);
-          }
-
-          let startTime = 0;
-          let endTime = 0
-
-          if(i === 0) {
-            startTime = new Date(value?.T).getTime()
-          } else if(i === resultPast2Hours?.data?.length -1) {
-            endTime = new Date(value?.T).getTime()
-          }
-
-          if(endTime - startTime <= 1200000) {
-            isHot = true
-          }
-        }
-
-        const past1HrRate = buyVol1Hr / sellVol1Hr;
+        //a hour
+        const result = await refetchGetVol({
+          ...coupleFilterLatest,
+          symbol: i.symbol,
+          buyVol: buyVol1Hr,
+          sellVol: sellVol1Hr,
+        });
+        const past1HrRate = result.buyVol / result.sellVol;
 
         if (
-          past1HrRate > past2HoursRate
+          past1HrRate > past2HrsRate &&
+          result.buyVol + result.sellVol > result2HrsAgo.buyVol + result2HrsAgo.sellVol
         ) {
-          responseResult.push(
-            `${i.symbol}: sold volume in 4h: (${sellVol2Hrs}), bought volume in 4h: (${buyVol2Hrs}), sold volume in 2h: (${sellVol1Hr}), bought volume in 2h: (${buyVol1Hr}), percent_change: ${i.price_percent_change}, isHot=${isHot ? 'true' : 'false'} \n`
+          responseResultUp.push(
+            `${i.symbol}: sold volume in 2h: (${result2HrsAgo.sellVol}), bought volume in 2h: (${result2HrsAgo.buyVol}), sold volume in 1h: (${result.sellVol}), bought volume in 1h: (${result.buyVol}), percent_change: ${i.price_percent_change} \n`
           );
-        }
+        } 
       }
 
-      const responseResultString =
-        responseResult.length > 0
-          ? responseResult.join("\n")
+      const responseResultString1 =
+        responseResultUp.length > 0
+          ? responseResultUp.join("\n")
           : "Không có coin nào để mua hết!";
-      await telegramBot.sendMessage(chat_id, responseResultString);
+          
+      await telegramBot.sendMessage(
+        chat_id,
+        responseResultString1
+      );
     })
     .catch((err) => {
       console.log(err);
     });
 };
 
-module.exports = findnewtokendowntrend;
+module.exports = findnewtokenuptrend;

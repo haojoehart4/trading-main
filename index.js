@@ -234,11 +234,11 @@ bot.on("message", (msg) => {
     const boughtPriceFloat = msg.text.split(":")[1].trim();
     boughtPrice = parseFloat(boughtPriceFloat);
     priceStone1 =
-      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.02;
+      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.0205;
     priceStone2 = parseFloat(boughtPriceFloat);
     priceStone3 =
-      parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.04;
-    defaultPriceStone3 = parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.04;
+      parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.041;
+    defaultPriceStone3 = parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.0405;
     // priceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
     // defaultPriceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
 
@@ -248,7 +248,6 @@ bot.on("message", (msg) => {
       parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat);
     // priceBought3 = parseFloat(boughtPriceFloat) * 0.06 + parseFloat(boughtPriceFloat)
 
-    console.log("boughtPrice::", boughtPrice);
     const connectAndListen = async () => {
       try {
         const result = await axios.get(
@@ -292,20 +291,20 @@ const handleTrading = async (close_price) => {
   // bot.sendMessage(chat_id, close_price);
   if (close_price >= priceBought1 && mileStone === 1) {
     mileStone += 1;
-    bot.sendMessage(chat_id, `mua 25% lần 2`);
+    bot.sendMessage(chat_id, `bought 25% of budget at the second with price = ${close_price}`);
   } else if (
     close_price >= priceBought2 &&
     (mileStone === 2 || mileStone === 3)
   ) {
     if(mileStone === 2) {
-      bot.sendMessage(chat_id, 'mua 50%')
+      bot.sendMessage(chat_id, `bought 50% of remain of budget with price = ${close_price}`)
       mileStone = 3
     } else {
       const futurePrice = close_price / priceBought2 - 1;
       if (futurePrice >= 0.01 * multipleStep2) {
         priceBought2 = defaultPriceStone3 + defaultPriceStone3 * 0.01;
         priceStone3 = defaultPriceStone3 + defaultPriceStone3 * 0.01;
-        bot.sendMessage(chat_id, `upgrade priceStone3 to ${priceStone3}`)
+        bot.sendMessage(chat_id, `Update priceStone3 to ${priceStone3}`)
         multipleStep2 += 1;
         mileStone = 3;
       }

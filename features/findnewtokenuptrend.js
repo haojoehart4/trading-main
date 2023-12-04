@@ -104,7 +104,7 @@ const refetchGetVol = async (coupleFilters) => {
   await sleep(1000)
   return refetchGetVol({
     startTime: result?.data.at(-1)?.T,
-    endTime: coupleFilters?.endTime,
+    endTime: coupleFilters?.endTime, 
     symbol: coupleFilters?.symbol,
     buyVol: buyVol,
     sellVol: sellVol,

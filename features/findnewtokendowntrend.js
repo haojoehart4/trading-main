@@ -9,7 +9,9 @@ const handleFilterCondition = async (
   const result = await axios.get(
     `https://api.binance.com/api/v3/ticker?windowSize=${intervalTime}&symbols=${usdtPairString}`
   );
-  const highPercentChange = await result?.data?.filter((x) => parseFloat(x.priceChangePercent) < filterParam);
+  const highPercentChange = await result?.data?.filter(
+    (x) => parseFloat(x.priceChangePercent) < filterParam
+  );
   const arr = highPercentChange?.map((x) => {
     return {
       symbol: x.symbol,
@@ -68,10 +70,13 @@ const handleSeperateSymbols = async (arr, isGetAPI = false) => {
   return childArray;
 };
 
+let sleep = (time) => new Promise((resolve) => setTimeout(resolve, time));
+
 const refetchGetVol = async (coupleFilters) => {
   let isComplete = false;
   let sellVol = coupleFilters.sellVol;
   let buyVol = coupleFilters.buyVol;
+  let timeout;
   const result = await axios.get(
     `https://api.binance.com/api/v3/aggTrades?symbol=${coupleFilters.symbol}&limit=1000&startTime=${coupleFilters?.startTime}&endTime=${coupleFilters?.endTime}`
   );
@@ -92,6 +97,9 @@ const refetchGetVol = async (coupleFilters) => {
   if (isComplete) {
     return { isComplete: isComplete, sellVol: sellVol, buyVol: buyVol };
   }
+
+  await sleep(1000);
+
   return refetchGetVol({
     startTime: result?.data.at(-1)?.T,
     endTime: coupleFilters?.endTime,
@@ -108,11 +116,18 @@ const findnewtokenuptrend = (telegramBot, chat_id) => {
       let childArray = [];
       let tokenPairsPriceChange = [];
 
-      //filter 4 hours
-      childArray = await handleSeperateSymbols(res?.data, true);
+      // filter 16h hours
+      // childArray = await handleSeperateSymbols(res?.data, true);
+      // const loopResult16Hrs = await handleLoop(childArray, -8, "16h");
+      // usdtPairsString = loopResult16Hrs.usdt_pair_string;
+      // tokenPairsPriceChange = loopResult16Hrs.token_pairs_price_change;
+
+      //filter 8h hours
+      childArray = await handleSeperateSymbols(tokenPairsPriceChange);
       const loopResult4Hrs = await handleLoop(childArray, -5, "8h");
       usdtPairsString = loopResult4Hrs.usdt_pair_string;
       tokenPairsPriceChange = loopResult4Hrs.token_pairs_price_change;
+
       //filter 2 hours
       childArray = await handleSeperateSymbols(tokenPairsPriceChange);
       const loopResult = await handleLoop(childArray, -3, "4h");
@@ -120,7 +135,6 @@ const findnewtokenuptrend = (telegramBot, chat_id) => {
       tokenPairsPriceChange = loopResult.token_pairs_price_change;
 
       let responseResultUp = [];
-      let responseResultDown = [];
       for (let i of tokenPairsPriceChange) {
         let buyVol2Hrs = 0;
         let sellVol2Hrs = 0;
@@ -143,8 +157,7 @@ const findnewtokenuptrend = (telegramBot, chat_id) => {
           buyVol: buyVol2Hrs,
           sellVol: sellVol2Hrs,
         });
-        const past2HrsRate =
-           result2HrsAgo.buyVol / result2HrsAgo.sellVol;
+        const past2HrsRate = result2HrsAgo.buyVol / result2HrsAgo.sellVol;
 
         //a hour
         const result = await refetchGetVol({
@@ -157,23 +170,21 @@ const findnewtokenuptrend = (telegramBot, chat_id) => {
 
         if (
           past1HrRate > past2HrsRate &&
-          result.buyVol + result.sellVol > result2HrsAgo.buyVol + result2HrsAgo.sellVol
+          result.buyVol + result.sellVol >
+            result2HrsAgo.buyVol + result2HrsAgo.sellVol
         ) {
           responseResultUp.push(
             `${i.symbol}: sold volume in 2h: (${result2HrsAgo.sellVol}), bought volume in 2h: (${result2HrsAgo.buyVol}), sold volume in 1h: (${result.sellVol}), bought volume in 1h: (${result.buyVol}), percent_change: ${i.price_percent_change} \n`
           );
-        } 
+        }
       }
 
       const responseResultString1 =
         responseResultUp.length > 0
           ? responseResultUp.join("\n")
           : "Không có coin nào để mua hết!";
-          
-      await telegramBot.sendMessage(
-        chat_id,
-        responseResultString1
-      );
+
+      await telegramBot.sendMessage(chat_id, responseResultString1);
     })
     .catch((err) => {
       console.log(err);

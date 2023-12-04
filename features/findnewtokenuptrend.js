@@ -172,7 +172,7 @@ const findnewtokenuptrend = (telegramBot, chat_id) => {
         } else if (
           past1HrRate < past2HrsRate &&
           result.buyVol + result.sellVol > result2HrsAgo.buyVol + result2HrsAgo.sellVol
-        ) {
+        ) { 
           responseResultDown.push(
             `${i.symbol}: sold volume in 2h: (${result2HrsAgo.sellVol}), bought volume in 2h: (${result2HrsAgo.buyVol}), sold volume in 1h: (${result.sellVol}), bought volume in 1h: (${result.buyVol}), percent_change: ${i.price_percent_change} \n`
           );

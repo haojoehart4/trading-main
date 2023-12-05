@@ -127,7 +127,7 @@ const findnewtokenuptrend = (telegramBot, chat_id) => {
           ...coupleFilterLatest,
           symbol: i.symbol,
           buyVol: buyVol1Hr,
-          sellVol: sellVol1Hr,
+          sellVol: sellVol1Hr, 
         });
         const past1HrRate = result.buyVol / result.sellVol;
 

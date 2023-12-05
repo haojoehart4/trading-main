@@ -299,7 +299,7 @@ const handleTrading = async (close_price) => {
     let buyVol1Hr = 0
     let sellVol1Hr = 0
     const coupleFilterLatest = {
-      startTime: new Date().getTime() - 1 * 60 * 60 * 1000,
+      startTime: new Date().getTime() - 4 * 60 * 60 * 1000,
       endTime: new Date().getTime(),
     };
     const result = await refetchGetVol({

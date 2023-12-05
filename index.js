@@ -25,7 +25,7 @@ app.use(function (req, res, next) {
   next();
 });
 const TelegramBot = require("node-telegram-bot-api");
-const { timeConvert } = require("./utils/helper");
+const { timeConvert, refetchGetVol } = require("./utils/helper");
 const findnewtokenUpTrend = require("./features/findnewtokenuptrend");
 const findnewtokenDownTrend = require("./features/findnewtokendowntrend");
 
@@ -132,6 +132,9 @@ let multipleStep2 = 1;
 let tokenPairs = "btcusdt";
 let boughtPrice = 0;
 let interval = null;
+let sessionDownTrend = {count: 0, rate: 0};
+let sessionUpTrend = {count: 0, rate: 0};
+let allowBuy = true;
 
 const targetTime = new Date();
 targetTime.setHours(targetTime.getHours() + 1);
@@ -177,6 +180,9 @@ const resetDefault = () => {
   multipleStep2 = 1;
   boughtPrice = 0;
   chat_id = null;
+  sessionDownTrend = {count: 0, rate :0}
+  sessionUpTrend = {count: 0, rate: 0}
+  allowBuy = false
   if (interval) {
     clearInterval(interval);
   }
@@ -234,18 +240,15 @@ bot.on("message", (msg) => {
     const boughtPriceFloat = msg.text.split(":")[1].trim();
     boughtPrice = parseFloat(boughtPriceFloat);
     priceStone1 =
-      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.0201;
-    priceStone2 = parseFloat(boughtPriceFloat);
-    priceStone3 =
-      parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.0401;
-    defaultPriceStone3 = parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.0401;
+      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.1;
+
     // priceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
     // defaultPriceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
   
-    priceBought1 =
-      parseFloat(boughtPriceFloat) * 0.02 + parseFloat(boughtPriceFloat);
-    priceBought2 =
-      parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat);
+    // priceBought1 =
+    //   parseFloat(boughtPriceFloat) * 0.02 + parseFloat(boughtPriceFloat);
+    // priceBought2 =
+    //   parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat);
     // priceBought3 = parseFloat(boughtPriceFloat) * 0.06 + parseFloat(boughtPriceFloat)
 
     const connectAndListen = async () => {
@@ -287,52 +290,92 @@ const handleTrading = async (close_price) => {
   //   bot.sendMessage(chat_id, balances.USDT.available);
   // });
 
+  
   //buy case
-  // bot.sendMessage(chat_id, close_price);
-  if (close_price >= priceBought1 && mileStone === 1) {
-    mileStone += 1;
-    bot.sendMessage(chat_id, `bought 25% of budget at the second with price = ${close_price}`);
-  } else if (
-    close_price >= priceBought2 &&
-    (mileStone === 2 || mileStone === 3)
-  ) {
-    if(mileStone === 2) {
-      bot.sendMessage(chat_id, `bought 50% of remain of budget with price = ${close_price}`)
-      mileStone = 3
+  if(new Date().getMinutes() === 58 && allowBuy) {
+    let buyVol1Hr = 0
+    let sellVol1Hr = 0
+    const coupleFilterLatest = {
+      startTime: new Date().getTime() - 1 * 60 * 60 * 1000,
+      endTime: new Date().getTime(),
+    };
+    const result = await refetchGetVol({
+      ...coupleFilterLatest,
+          symbol: tokenPairs,
+          buyVol: buyVol1Hr,
+          sellVol: sellVol1Hr,
+    })
+    const volPast1Hr = result.buyVol - result.sellVol
+    if(volPast1Hr < 0) {
+      sessionDownTrend = {count: sessionDownTrend + 1, rate: result.buyVol / result.sellVol}
     } else {
-      const futurePrice = close_price / priceBought2 - 1;
-      if (futurePrice >= 0.01 * multipleStep2) {
-        priceBought2 = defaultPriceStone3 + defaultPriceStone3 * 0.01;
-        priceStone3 = defaultPriceStone3 + defaultPriceStone3 * 0.01;
-        bot.sendMessage(chat_id, `Update priceStone3 to ${priceStone3}`)
-        multipleStep2 += 1;
-        mileStone = 3;
+      if((sessionDownTrend.count > 2 && sessionUpTrend.count === 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && sessionUpTrend.rate > sessionDownTrend.rate)) {
+        if(mileStone === 1 && close_price > boughtPrice) {
+          priceStone1 = close_price - (close_price * 0.01)
+          mileStone += 1
+          bot.sendMessage(chat_id, `mua vào lần 2 với giá ${close_price}, KL 25%`)
+        } else if(mileStone === 2) {
+          priceStone1 = close_price - (close_price * 0.01)
+          mileStone += 1
+          bot.sendMessage(chat_id, `mua vào lần 3 với giá ${close_price}, KL 50%`)
+        }
+        sessionDownTrend = {count: 0, rate: 0}
+        sessionUpTrend = {count: 0, rate: 0}
+      } else {
+        sessionUpTrend = {count: sessionUpTrend + 1, rate: result.buyVol / result.sellVol}
       }
     }
+    allowBuy = false
   }
+
+
+  // bot.sendMessage(chat_id, close_price);
+
+  // if (close_price >= priceBought1 && mileStone === 1) {
+  //   mileStone += 1;
+  //   bot.sendMessage(chat_id, `bought 25% of budget at the second with price = ${close_price}`);
+  // } else if (
+  //   close_price >= priceBought2 &&
+  //   (mileStone === 2 || mileStone === 3)
+  // ) {
+  //   if(mileStone === 2) {
+  //     bot.sendMessage(chat_id, `bought 50% of remain of budget with price = ${close_price}`)
+  //     mileStone = 3
+  //   } else {
+  //     const futurePrice = close_price / priceBought2 - 1;
+  //     if (futurePrice >= 0.01 * multipleStep2) {
+  //       priceBought2 = defaultPriceStone3 + defaultPriceStone3 * 0.01;
+  //       priceStone3 = defaultPriceStone3 + defaultPriceStone3 * 0.01;
+  //       bot.sendMessage(chat_id, `Update priceStone3 to ${priceStone3}`)
+  //       multipleStep2 += 1;
+  //       mileStone = 3;
+  //     }
+  //   }
+  // }
 
   //sold case
   if (close_price <= priceStone1) {
     bot.sendMessage(
       chat_id,
-      `Sell all tokens with price ${close_price} at default position`
+      `Sell all tokens with price ${close_price}`
     );
     resetDefault();
-  } else {
-    if (close_price <= priceStone2 && mileStone === 2) {
-      bot.sendMessage(
-        chat_id,
-        `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
-      );
-      resetDefault();
-    } else if (close_price <= priceStone3 && mileStone === 3) {
-      bot.sendMessage(
-        chat_id,
-        `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
-      );
-      resetDefault();
-    }
-  }
+  } 
+  // else {
+  //   if (close_price <= priceStone2 && mileStone === 2) {
+  //     bot.sendMessage(
+  //       chat_id,
+  //       `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
+  //     );
+  //     resetDefault();
+  //   } else if (close_price <= priceStone3 && mileStone === 3) {
+  //     bot.sendMessage(
+  //       chat_id,
+  //       `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
+  //     );
+  //     resetDefault();
+  //   }
+  // }
 };
 
 const server = require("http").createServer(app);

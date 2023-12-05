@@ -311,7 +311,7 @@ const handleTrading = async (close_price) => {
     const volPast1Hr = result.buyVol - result.sellVol
 
     if(volPast1Hr < 0) {
-      sessionDownTrend = {count: sessionDownTrend + 1, rate: result.buyVol / result.sellVol}
+      sessionDownTrend = {count: sessionDownTrend.count + 1, rate: result.buyVol / result.sellVol}
       bot.sendMessage(chat_id, `volume decrease: ${volPast1Hr}, session_down_trend_count: ${sessionDownTrend.count}, session_down_trend_rate: ${result.buyVol / result.sellVol}`)
     } else {
       if((sessionDownTrend.count > 2 && sessionUpTrend.count === 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && sessionUpTrend.rate > sessionDownTrend.rate)) {
@@ -327,7 +327,7 @@ const handleTrading = async (close_price) => {
         sessionDownTrend = {count: 0, rate: 0}
         sessionUpTrend = {count: 0, rate: 0}
       } else {
-        sessionUpTrend = {count: sessionUpTrend + 1, rate: result.buyVol / result.sellVol}
+        sessionUpTrend = {count: sessionUpTrend.count + 1, rate: result.buyVol / result.sellVol}
         bot.sendMessage(chat_id, `volume increase: ${volPast1Hr}, session_up_trend_count: ${sessionUpTrend.count}, session_up_trend_rate: ${result.buyVol / result.sellVol}`)
       }
     }

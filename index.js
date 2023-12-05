@@ -240,7 +240,7 @@ bot.on("message", (msg) => {
     const boughtPriceFloat = msg.text.split(":")[1].trim();
     boughtPrice = parseFloat(boughtPriceFloat);
     priceStone1 =
-      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.1;
+      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.06;
 
     // priceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
     // defaultPriceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
@@ -309,16 +309,17 @@ const handleTrading = async (close_price) => {
           sellVol: sellVol1Hr,
     })
     const volPast1Hr = result.buyVol - result.sellVol
+
     if(volPast1Hr < 0) {
       sessionDownTrend = {count: sessionDownTrend + 1, rate: result.buyVol / result.sellVol}
     } else {
       if((sessionDownTrend.count > 2 && sessionUpTrend.count === 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && sessionUpTrend.rate > sessionDownTrend.rate)) {
         if(mileStone === 1 && close_price > boughtPrice) {
-          priceStone1 = close_price - (close_price * 0.01)
+          priceStone1 = close_price - (close_price * 0.025)
           mileStone += 1
           bot.sendMessage(chat_id, `mua vào lần 2 với giá ${close_price}, KL 25%`)
         } else if(mileStone === 2) {
-          priceStone1 = close_price - (close_price * 0.01)
+          priceStone1 = close_price - (close_price * 0.025)
           mileStone += 1
           bot.sendMessage(chat_id, `mua vào lần 3 với giá ${close_price}, KL 50%`)
         }

@@ -290,7 +290,7 @@ const handleTrading = async (close_price) => {
   //   bot.sendMessage(chat_id, balances.USDT.available);
   // });
 
-  if(new Date().getMinutes() === 57) {
+  if(new Date().getMinutes() === 57 && new Date().getHours() % 4 === 0) {
     allowBuy = true
   }
   

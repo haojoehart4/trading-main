@@ -147,7 +147,7 @@ const findnewtokenuptrend = (telegramBot, chat_id) => {
           ? responseResultUp.join("\n")
           : "Không có coin nào để mua hết!";
 
-      await telegramBot.sendMessage(chat_id, responseResultString1);
+      await telegramBot.sendMessage(chat_id, `Downtrend: ${responseResultString1}`);
     })
     .catch((err) => {
       console.log(err);

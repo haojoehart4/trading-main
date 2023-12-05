@@ -189,13 +189,9 @@ const findnewtokenuptrend = (telegramBot, chat_id) => {
           ? responseResultUp.join("\n")
           : "Không có coin nào để mua hết!";
 
-      const responseResultString2 =
-        responseResultDown.length > 0
-          ? responseResultDown.join("\n")
-          : "Không có coin nào để mua hết!";
       await telegramBot.sendMessage(
         chat_id,
-        responseResultString1
+        `Uptrend: ${responseResultString1}`
       );
     })
     .catch((err) => {

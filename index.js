@@ -315,11 +315,11 @@ const handleTrading = async (close_price) => {
     } else {
       if((sessionDownTrend.count > 2 && sessionUpTrend.count === 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && sessionUpTrend.rate > sessionDownTrend.rate)) {
         if(mileStone === 1 && close_price > boughtPrice) {
-          priceStone1 = close_price - (close_price * 0.025)
+          priceStone1 = close_price - (close_price * 0.04)
           mileStone += 1
           bot.sendMessage(chat_id, `mua vào lần 2 với giá ${close_price}, KL 25%`)
         } else if(mileStone === 2) {
-          priceStone1 = close_price - (close_price * 0.025)
+          priceStone1 = close_price - (close_price * 0.02)
           mileStone += 1
           bot.sendMessage(chat_id, `mua vào lần 3 với giá ${close_price}, KL 50%`)
         }

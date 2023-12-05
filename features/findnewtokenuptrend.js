@@ -13,7 +13,7 @@ const handleFilterCondition = async (
     _.isArray(filterParam)
       ? parseFloat(x.priceChangePercent) > filterParam[0] &&
         parseFloat(x.priceChangePercent) < filterParam[1]
-      : parseFloat(x.priceChangePercent) > filterParam
+      : filterParam < 0 ? parseFloat(x.priceChangePercent) < filterParam : parseFloat(x.priceChangePercent) > filterParam
   );
   const arr = highPercentChange?.map((x) => {
     return {
@@ -123,6 +123,12 @@ const findnewtokenuptrend = (telegramBot, chat_id) => {
 
       //filter 4 hours
       childArray = await handleSeperateSymbols(res?.data, true);
+      const loopResult4ds = await handleLoop(childArray, -10, "4d");
+      usdtPairsString = loopResult4ds.usdt_pair_string;
+      tokenPairsPriceChange = loopResult4ds.token_pairs_price_change;
+
+      //filter 4 hours
+      childArray = await handleSeperateSymbols(tokenPairsPriceChange);
       const loopResult4Hrs = await handleLoop(childArray, [-5, -1], "4h");
       usdtPairsString = loopResult4Hrs.usdt_pair_string;
       tokenPairsPriceChange = loopResult4Hrs.token_pairs_price_change;

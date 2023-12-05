@@ -117,20 +117,20 @@ const findnewtokenuptrend = (telegramBot, chat_id) => {
       let tokenPairsPriceChange = [];
 
       // filter 16h hours
-      // childArray = await handleSeperateSymbols(res?.data, true);
-      // const loopResult16Hrs = await handleLoop(childArray, -8, "16h");
-      // usdtPairsString = loopResult16Hrs.usdt_pair_string;
-      // tokenPairsPriceChange = loopResult16Hrs.token_pairs_price_change;
+      childArray = await handleSeperateSymbols(res?.data, true);
+      const loopResult16Hrs = await handleLoop(childArray, -4.5, "16h");
+      usdtPairsString = loopResult16Hrs.usdt_pair_string;
+      tokenPairsPriceChange = loopResult16Hrs.token_pairs_price_change;
 
       //filter 8h hours
       childArray = await handleSeperateSymbols(tokenPairsPriceChange);
-      const loopResult4Hrs = await handleLoop(childArray, -5, "8h");
+      const loopResult4Hrs = await handleLoop(childArray, -2.5, "8h");
       usdtPairsString = loopResult4Hrs.usdt_pair_string;
       tokenPairsPriceChange = loopResult4Hrs.token_pairs_price_change;
 
       //filter 2 hours
       childArray = await handleSeperateSymbols(tokenPairsPriceChange);
-      const loopResult = await handleLoop(childArray, -3, "4h");
+      const loopResult = await handleLoop(childArray, -1.5, "4h");
       usdtPairsString = loopResult.usdt_pair_string;
       tokenPairsPriceChange = loopResult.token_pairs_price_change;
 

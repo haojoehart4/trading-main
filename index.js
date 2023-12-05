@@ -241,7 +241,7 @@ bot.on("message", (msg) => {
     defaultPriceStone3 = parseFloat(boughtPriceFloat) + parseFloat(boughtPriceFloat) * 0.0401;
     // priceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
     // defaultPriceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
-
+ 
     priceBought1 =
       parseFloat(boughtPriceFloat) * 0.02 + parseFloat(boughtPriceFloat);
     priceBought2 =

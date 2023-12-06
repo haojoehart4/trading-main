@@ -321,13 +321,13 @@ const handleTrading = async (close_price) => {
       sessionDownTrend = {count: sessionDownTrend.count + 1, rate: result.buyVol / result.sellVol}
       bot.sendMessage(chat_id, `volume decrease: ${volPast1Hr}, session_down_trend_count: ${sessionDownTrend.count}, session_down_trend_rate: ${result.buyVol / result.sellVol}`)
     } else {
-      if((sessionDownTrend.count > 2 && sessionUpTrend.count === 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && sessionUpTrend.rate > (sessionDownTrend.rate * 2))) {
+      if((sessionDownTrend.count > 2 && sessionUpTrend.count === 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && sessionUpTrend.rate > (sessionDownTrend.rate * 1.2))) {
         if(mileStone === 2 && close_price > boughtPrice) {
-          priceStone1 = close_price - (close_price * 0.04)
+          priceStone1 = (close_price + priceStone1) / 1.8
           mileStone += 1
           bot.sendMessage(chat_id, `mua vào lần 2 với giá ${close_price}, KL 25%`)
         } else if(mileStone === 3) {
-          priceStone1 = close_price - (close_price * 0.02)
+          priceStone1 = (close_price + priceStone1) / 1.8
           // mileStone += 1
           bot.sendMessage(chat_id, `mua vào lần 3 với giá ${close_price}, KL 50%`)
         }

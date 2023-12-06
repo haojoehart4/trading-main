@@ -15,7 +15,7 @@ const handleFilterCondition = async (
         parseFloat(x.priceChangePercent) < filterParam[1]
       : filterParam < 0 ? parseFloat(x.priceChangePercent) < filterParam : parseFloat(x.priceChangePercent) > filterParam
   );
-  const arr = highPercentChange?.map((x) => {
+  const arr = highPercentChange?.filter(x => parseFloat(x?.lastPrice) > 0.1)?.map((x) => {
     return {
       symbol: x.symbol,
       price_percent_change: x?.priceChangePercent,

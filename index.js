@@ -136,6 +136,7 @@ let sessionDownTrend = {count: 0, rate: 0};
 let sessionUpTrend = {count: 0, rate: 0};
 let allowBuy = true;
 let specificTime = null
+let defaultSituation = true
 
 const targetTime = new Date();
 targetTime.setHours(targetTime.getHours() + 1);
@@ -185,6 +186,7 @@ const resetDefault = () => {
   sessionUpTrend = {count: 0, rate: 0}
   allowBuy = false
   specificTime = null
+  defaultSituation = true
   if (interval) {
     clearInterval(interval);
   }
@@ -312,31 +314,25 @@ const handleTrading = async (close_price) => {
           sellVol: sellVol1Hr,
     })
     const volPast1Hr = result.buyVol - result.sellVol
-    if(mileStone === 1 && close_price > boughtPrice * 0.02) {
-      mileStone += 1
-      priceStone1 = priceStone1 + (priceStone1 * (boughtPrice / close_price))
-      bot.sendMessage(chat_id, `Update pricestone to ${priceStone1}`)
+    if(volPast1Hr < 0) {
+      sessionDownTrend = {count: sessionDownTrend.count + 1, rate: result.buyVol / result.sellVol}
+      bot.sendMessage(chat_id, `volume decrease: ${volPast1Hr}, session_down_trend_count: ${sessionDownTrend.count}, session_down_trend_rate: ${result.buyVol / result.sellVol}`)
     } else {
-      if(volPast1Hr < 0) {
-        sessionDownTrend = {count: sessionDownTrend.count + 1, rate: result.buyVol / result.sellVol}
-        bot.sendMessage(chat_id, `volume decrease: ${volPast1Hr}, session_down_trend_count: ${sessionDownTrend.count}, session_down_trend_rate: ${result.buyVol / result.sellVol}`)
-      } else {
-        if((sessionDownTrend.count > 2 && sessionUpTrend.count === 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && sessionUpTrend.rate > (sessionDownTrend.rate * 2))) {
-          if(mileStone === 2 && close_price > boughtPrice) {
-            priceStone1 = close_price - (close_price * 0.04)
-            mileStone += 1
-            bot.sendMessage(chat_id, `mua vào lần 2 với giá ${close_price}, KL 25%`)
-          } else if(mileStone === 3) {
-            priceStone1 = close_price - (close_price * 0.02)
-            // mileStone += 1
-            bot.sendMessage(chat_id, `mua vào lần 3 với giá ${close_price}, KL 50%`)
-          }
-          sessionDownTrend = {count: 0, rate: 0}
-          sessionUpTrend = {count: 0, rate: 0}
-        } else {
-          sessionUpTrend = {count: sessionUpTrend.count + 1, rate: result.buyVol / result.sellVol}
-          bot.sendMessage(chat_id, `volume increase: ${volPast1Hr}, session_up_trend_count: ${sessionUpTrend.count}, session_up_trend_rate: ${result.buyVol / result.sellVol}`)
+      if((sessionDownTrend.count > 2 && sessionUpTrend.count === 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && sessionUpTrend.rate > (sessionDownTrend.rate * 2))) {
+        if(mileStone === 2 && close_price > boughtPrice) {
+          priceStone1 = close_price - (close_price * 0.04)
+          mileStone += 1
+          bot.sendMessage(chat_id, `mua vào lần 2 với giá ${close_price}, KL 25%`)
+        } else if(mileStone === 3) {
+          priceStone1 = close_price - (close_price * 0.02)
+          // mileStone += 1
+          bot.sendMessage(chat_id, `mua vào lần 3 với giá ${close_price}, KL 50%`)
         }
+        sessionDownTrend = {count: 0, rate: 0}
+        sessionUpTrend = {count: 0, rate: 0}
+      } else {
+        sessionUpTrend = {count: sessionUpTrend.count + 1, rate: result.buyVol / result.sellVol}
+        bot.sendMessage(chat_id, `volume increase: ${volPast1Hr}, session_up_trend_count: ${sessionUpTrend.count}, session_up_trend_rate: ${result.buyVol / result.sellVol}`)
       }
     }
   }
@@ -367,6 +363,12 @@ const handleTrading = async (close_price) => {
   // }
 
   //sold case
+  if(mileStone === 1 && close_price > boughtPrice * 0.04) {
+    mileStone += 1
+    priceStone1 = priceStone1 + (priceStone1 * (boughtPrice / close_price))
+    bot.sendMessage(chat_id, `Update pricestone to ${priceStone1}`)
+  }
+
   if (close_price <= priceStone1) {
     bot.sendMessage(
       chat_id,

@@ -363,7 +363,7 @@ const handleTrading = async (close_price) => {
   // }
 
   //sold case
-  if(mileStone === 1 && close_price > boughtPrice * 0.04) {
+  if(mileStone === 1 && close_price > boughtPrice * 0.04 + boughtPrice) {
     mileStone += 1
     priceStone1 = priceStone1 + (priceStone1 * (boughtPrice / close_price))
     bot.sendMessage(chat_id, `Update pricestone to ${priceStone1}`)

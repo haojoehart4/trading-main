@@ -315,12 +315,13 @@ const handleTrading = async (close_price) => {
     if(mileStone === 1 && close_price > boughtPrice * 0.02) {
       mileStone += 1
       priceStone1 = priceStone1 + (priceStone1 * (boughtPrice / close_price))
+      bot.sendMessage(chat_id, `Update pricestone to ${priceStone1}`)
     } else {
       if(volPast1Hr < 0) {
         sessionDownTrend = {count: sessionDownTrend.count + 1, rate: result.buyVol / result.sellVol}
         bot.sendMessage(chat_id, `volume decrease: ${volPast1Hr}, session_down_trend_count: ${sessionDownTrend.count}, session_down_trend_rate: ${result.buyVol / result.sellVol}`)
       } else {
-        if((sessionDownTrend.count > 2 && sessionUpTrend.count === 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && sessionUpTrend.rate > sessionDownTrend.rate)) {
+        if((sessionDownTrend.count > 2 && sessionUpTrend.count === 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && sessionUpTrend.rate > (sessionDownTrend.rate * 2))) {
           if(mileStone === 2 && close_price > boughtPrice) {
             priceStone1 = close_price - (close_price * 0.04)
             mileStone += 1

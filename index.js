@@ -300,6 +300,7 @@ const handleTrading = async (close_price) => {
   if(new Date().getMinutes() === 58 && allowBuy) {
     let buyVol1Hr = 0
     let sellVol1Hr = 0
+    allowBuy = false
     const coupleFilterLatest = {
       startTime: new Date().getTime() - 3 * 60 * 60 * 1000,
       endTime: new Date().getTime(),
@@ -309,9 +310,8 @@ const handleTrading = async (close_price) => {
           symbol: tokenPairs,
           buyVol: buyVol1Hr,
           sellVol: sellVol1Hr,
-    })
+    }, 2000)
     const volPast1Hr = result.buyVol - result.sellVol
-    allowBuy = false
     if(mileStone === 1 && close_price > boughtPrice * 0.02) {
       mileStone += 1
       priceStone1 = priceStone1 + (priceStone1 * (boughtPrice / close_price))

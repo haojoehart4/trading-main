@@ -310,7 +310,7 @@ const handleTrading = async (close_price) => {
           symbol: tokenPairs,
           buyVol: buyVol1Hr,
           sellVol: sellVol1Hr,
-    }, 2000)
+    })
     const volPast1Hr = result.buyVol - result.sellVol
     if(mileStone === 1 && close_price > boughtPrice * 0.02) {
       mileStone += 1

@@ -256,6 +256,7 @@ bot.on("message", (msg) => {
     // priceBought3 = parseFloat(boughtPriceFloat) * 0.06 + parseFloat(boughtPriceFloat)
 
     specificTime = new Date().getHours() % 3
+    bot.sendMessage(chat_id, `specificTime = ${specificTime}`)
     const connectAndListen = async () => {
       try {
         const result = await axios.get(
@@ -365,7 +366,7 @@ const handleTrading = async (close_price) => {
   //sold case
   if(mileStone === 1 && close_price > boughtPrice * 0.04 + boughtPrice) {
     mileStone += 1
-    priceStone1 = priceStone1 + (priceStone1 * (boughtPrice / close_price))
+    priceStone1 = (close_price / boughtPrice) * priceStone1
     bot.sendMessage(chat_id, `Update pricestone to ${priceStone1}`)
   }
 

@@ -160,7 +160,7 @@ const findnewtokendowntrend = (telegramBot, chat_id) => {
         (past9HrsRlt?.isBuySession && past6HrsRlt?.isBuySession && past3HrsRlt?.isBuySession && (past3HrsRlt.rate > past6HrsRlt.rate))) {
           responseResultUp.push(
             `${i.symbol}: sold volume in 9h: (${result9HrsAgo.sellVol}), bought volume in 9h: (${result9HrsAgo.buyVol}), sold volume in 6h: (${result6Hrs.sellVol}), bought volume in 6h: (${result6Hrs.buyVol}), 
-            sold volume in 3h: (${result3Hrs.sellVol}), bought volume in 6h: (${result3Hrs.buyVol}), percent_change: ${i.price_percent_change} \n`
+            sold volume in 3h: (${result3Hrs.sellVol}), bought volume in 3h: (${result3Hrs.buyVol}), percent_change: ${i.price_percent_change} \n`
           );
         }
 

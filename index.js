@@ -136,7 +136,7 @@ let sessionDownTrend = {count: 0, rate: 0};
 let sessionUpTrend = {count: 0, rate: 0};
 let allowBuy = true;
 let specificTime = null
-let defaultSituation = true
+let priceStoneUpdated = 0
 
 const targetTime = new Date();
 targetTime.setHours(targetTime.getHours() + 1);
@@ -186,7 +186,7 @@ const resetDefault = () => {
   sessionUpTrend = {count: 0, rate: 0}
   allowBuy = false
   specificTime = null
-  defaultSituation = true
+  priceStoneUpdated = 0
   if (interval) {
     clearInterval(interval);
   }
@@ -243,6 +243,7 @@ bot.on("message", (msg) => {
   if (msg.text.toString().toLowerCase().indexOf("price") !== -1) {
     const boughtPriceFloat = msg.text.split(":")[1].trim();
     boughtPrice = parseFloat(boughtPriceFloat);
+    priceStoneUpdated = parseFloat(boughtPriceFloat)
     priceStone1 =
       parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.06;
 
@@ -255,7 +256,7 @@ bot.on("message", (msg) => {
     //   parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat);
     // priceBought3 = parseFloat(boughtPriceFloat) * 0.06 + parseFloat(boughtPriceFloat)
 
-    specificTime = new Date().getHours() % 3
+    specificTime = new Date().getUTCHours() % 3
     bot.sendMessage(chat_id, `specificTime = ${specificTime}`)
     const connectAndListen = async () => {
       try {
@@ -296,7 +297,7 @@ const handleTrading = async (close_price) => {
   //   bot.sendMessage(chat_id, balances.USDT.available);
   // });
   if(new Date().getMinutes() === 57) {
-    if(new Date().getHours() % 3 === specificTime) {
+    if(new Date().getUTCHours() % 3 === specificTime) {
       allowBuy = true
     }
   }
@@ -323,11 +324,11 @@ const handleTrading = async (close_price) => {
     } else {
       if((sessionDownTrend.count > 2 && sessionUpTrend.count === 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && sessionUpTrend.rate > (sessionDownTrend.rate * 1.2))) {
         if(mileStone === 2 && close_price > boughtPrice) {
-          priceStone1 = (close_price + priceStone1) / 1.8
+          priceStone1 = (close_price + priceStone1) / 2
           mileStone += 1
           bot.sendMessage(chat_id, `mua vào lần 2 với giá ${close_price}, KL 25%`)
         } else if(mileStone === 3) {
-          priceStone1 = (close_price + priceStone1) / 1.8
+          priceStone1 = (close_price + priceStone1) / 2
           // mileStone += 1
           bot.sendMessage(chat_id, `mua vào lần 3 với giá ${close_price}, KL 50%`)
         }
@@ -366,10 +367,16 @@ const handleTrading = async (close_price) => {
   // }
 
   //sold case
-  if(mileStone === 1 && close_price > boughtPrice * 0.04 + boughtPrice) {
-    mileStone += 1
-    priceStone1 = (close_price / boughtPrice) * priceStone1
+  const percentChange = ((close_price / priceStoneUpdated ) - 1 ) * 100
+  if(mileStone === 1 && percentChange > 1) {
+    priceStone1 = ((percentChange / 100) * percentChange) + priceStone1
+    priceStoneUpdated = close_price
     bot.sendMessage(chat_id, `Update pricestone to ${priceStone1}`)
+    if(priceStoneUpdated >= (boughtPrice - (boughtPrice * 0.04))) {
+      mileStone = 2
+      priceStone1 = (close_price + priceStoneUpdated) /2
+      bot.sendMessage(chat_id, `Update priceStone to ${priceStone1} and mileStone = ${mileStone}`)
+    }
   }
 
   if (close_price <= priceStone1) {

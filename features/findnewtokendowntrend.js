@@ -16,7 +16,7 @@ const handleFilterCondition = async (
       : parseFloat(x.priceChangePercent) > filterParam
   );
   const arr = highPercentChange
-    ?.filter((x) => parseFloat(x?.lastPrice) > 0.1)
+    ?.filter((x) => parseFloat(x?.lastPrice) > 0.5)
     ?.map((x) => {
       return {
         symbol: x.symbol,
@@ -90,13 +90,13 @@ const findnewtokendowntrend = (telegramBot, chat_id) => {
 
       // filter 3d hours
       childArray = await handleSeperateSymbols(res?.data, true);
-      const loopResult16Hrs = await handleLoop(childArray, -5, "3d");
+      const loopResult16Hrs = await handleLoop(childArray, -2, "3d");
       usdtPairsString = loopResult16Hrs.usdt_pair_string;
       tokenPairsPriceChange = loopResult16Hrs.token_pairs_price_change;
 
       // // filter 3h hours
       childArray = await handleSeperateSymbols(tokenPairsPriceChange);
-      const loopResult1d = await handleLoop(childArray, 0.2, "3h");
+      const loopResult1d = await handleLoop(childArray, 0.5, "3h");
       usdtPairsString = loopResult1d.usdt_pair_string;
       tokenPairsPriceChange = loopResult1d.token_pairs_price_change;
 
@@ -114,18 +114,18 @@ const findnewtokendowntrend = (telegramBot, chat_id) => {
         let buyVol3Hr = 0;
         let sellVol3Hr = 0;
         const coupleFilterLatest = {
-          startTime: new Date().getTime() - 2.5 * 60 * 60 * 1000,
+          startTime: new Date().getTime() - 3 * 60 * 60 * 1000,
           endTime: new Date().getTime(),
         };
 
         const coupleFilter6HrsAgo = {
-          startTime: new Date().getTime() - 5 * 60 * 60 * 1000,
-          endTime: new Date().getTime() - 2.5 * 60 * 60 * 1000,
+          startTime: new Date().getTime() - 6 * 60 * 60 * 1000,
+          endTime: new Date().getTime() - 3 * 60 * 60 * 1000,
         };
 
         const coupleFilter9HrsAgo = {
-          startTime: new Date().getTime() - 7.5 * 60 * 60 * 1000,
-          endTime: new Date().getTime() - 5 * 60 * 60 * 1000,
+          startTime: new Date().getTime() - 9 * 60 * 60 * 1000,
+          endTime: new Date().getTime() - 6 * 60 * 60 * 1000,
         };
 
         //9hrs
@@ -155,7 +155,9 @@ const findnewtokendowntrend = (telegramBot, chat_id) => {
         });
         const past3HrsRlt = {rate: result3Hrs.buyVol / result3Hrs.sellVol, isBuySession: result3Hrs.buyVol - result3Hrs.sellVol > 0 ? true : false};
 
-        if ((!past9HrsRlt?.isBuySession && past6HrsRlt?.isBuySession && past3HrsRlt?.isBuySession) || (!past6HrsRlt?.isBuySession && past3HrsRlt?.isBuySession && (past3HrsRlt.rate > past6HrsRlt.rate * 1.2))) {
+        if ((!past9HrsRlt?.isBuySession && past6HrsRlt?.isBuySession && past3HrsRlt?.isBuySession) || 
+        (!past6HrsRlt?.isBuySession && past3HrsRlt?.isBuySession && (past3HrsRlt.rate > past6HrsRlt.rate * 1.2))||
+        (past9HrsRlt?.isBuySession && past6HrsRlt?.isBuySession && past3HrsRlt?.isBuySession && (past3HrsRlt.rate > past6HrsRlt.rate))) {
           responseResultUp.push(
             `${i.symbol}: sold volume in 9h: (${result9HrsAgo.sellVol}), bought volume in 9h: (${result9HrsAgo.buyVol}), sold volume in 6h: (${result6Hrs.sellVol}), bought volume in 6h: (${result6Hrs.buyVol}), 
             sold volume in 3h: (${result3Hrs.sellVol}), bought volume in 6h: (${result3Hrs.buyVol}), percent_change: ${i.price_percent_change} \n`

@@ -292,10 +292,7 @@ bot.on("message", (msg) => {
 });
 
 const handleTrading = async (close_price) => {
-  // binance.balance((error, balances) => {
-  //   if (error) return console.error(error.body);
-  //   bot.sendMessage(chat_id, balances.USDT.available);
-  // });
+  const latestPrice = parseFloat(close_price)
   if(new Date().getMinutes() === 57) {
     if(new Date().getUTCHours() % 3 === specificTime) {
       allowBuy = true
@@ -323,14 +320,14 @@ const handleTrading = async (close_price) => {
       bot.sendMessage(chat_id, `volume decrease: ${volPast1Hr}, session_down_trend_count: ${sessionDownTrend.count}, session_down_trend_rate: ${result.buyVol / result.sellVol}`)
     } else {
       if((sessionDownTrend.count > 2 && sessionUpTrend.count === 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && sessionUpTrend.rate > (sessionDownTrend.rate * 1.2))) {
-        if(mileStone === 2 && close_price > boughtPrice) {
-          priceStone1 = (close_price + priceStone1) / 2
+        if(mileStone === 2 && latestPrice > boughtPrice) {
+          priceStone1 = (latestPrice + priceStone1) / 2
           mileStone += 1
-          bot.sendMessage(chat_id, `mua vào lần 2 với giá ${close_price}, KL 25%, priceStone: ${priceStone1}`)
+          bot.sendMessage(chat_id, `mua vào lần 2 với giá ${latestPrice}, KL 25%, priceStone: ${priceStone1}, latestPrice: ${latestPrice}`)
         } else if(mileStone === 3) {
-          priceStone1 = (close_price + priceStone1) / 2
+          priceStone1 = (latestPrice + priceStone1) / 2
           // mileStone += 1
-          bot.sendMessage(chat_id, `mua vào lần 3 với giá ${close_price}, KL 50%, priceStone: ${priceStone1}`)
+          bot.sendMessage(chat_id, `mua vào lần 3 với giá ${latestPrice}, KL 50%, priceStone: ${priceStone1}, latestPrice: ${latestPrice}`)
         }
         sessionDownTrend = {count: 0, rate: 0}
         sessionUpTrend = {count: 0, rate: 0}
@@ -341,54 +338,29 @@ const handleTrading = async (close_price) => {
     }
   }
 
-
-  // bot.sendMessage(chat_id, close_price);
-
-  // if (close_price >= priceBought1 && mileStone === 1) {
-  //   mileStone += 1;
-  //   bot.sendMessage(chat_id, `bought 25% of budget at the second with price = ${close_price}`);
-  // } else if (
-  //   close_price >= priceBought2 &&
-  //   (mileStone === 2 || mileStone === 3)
-  // ) {
-  //   if(mileStone === 2) {
-  //     bot.sendMessage(chat_id, `bought 50% of remain of budget with price = ${close_price}`)
-  //     mileStone = 3
-  //   } else {
-  //     const futurePrice = close_price / priceBought2 - 1;
-  //     if (futurePrice >= 0.01 * multipleStep2) {
-  //       priceBought2 = defaultPriceStone3 + defaultPriceStone3 * 0.01;
-  //       priceStone3 = defaultPriceStone3 + defaultPriceStone3 * 0.01;
-  //       bot.sendMessage(chat_id, `Update priceStone3 to ${priceStone3}`)
-  //       multipleStep2 += 1;
-  //       mileStone = 3;
-  //     }
-  //   }
-  // }
-
   //sold case
-  const percentChange = ((close_price / priceStoneUpdated ) - 1 ) * 100
+  const percentChange = ((latestPrice / priceStoneUpdated ) - 1 ) * 100
   if(percentChange > 1) {
     priceStone1 = ((percentChange / 100) * percentChange) + priceStone1
-    await bot.sendMessage(chat_id, `Update pricestone: ${priceStone1}, close_price: ${close_price}`)
-    if(((close_price / boughtPrice) - 1) * 100 >= 4 && mileStone === 1) {
+    await bot.sendMessage(chat_id, `Update pricestone: ${priceStone1}, latestPrice: ${latestPrice}`)
+    if(((latestPrice / boughtPrice) - 1) * 100 >= 4 && mileStone === 1) {
       mileStone = 2
-      priceStone1 = (close_price + priceStoneUpdated) / 2
-      bot.sendMessage(chat_id, `Update priceStone: ${priceStone1} and mileStone: ${mileStone}, close_price: ${close_price}`)
+      priceStone1 = (latestPrice + priceStoneUpdated) / 2
+      bot.sendMessage(chat_id, `Update priceStone: ${priceStone1} and mileStone: ${mileStone}, latestPrice: ${latestPrice}`)
     }
     
     if(mileStone >= 2) {
-      priceStone1 = (close_price + priceStoneUpdated) / 2
-      bot.sendMessage(chat_id, `Update priceStone: ${priceStone1} and mileStone: ${mileStone}, close_price: ${close_price}`)
+      priceStone1 = (latestPrice + priceStoneUpdated) / 2
+      bot.sendMessage(chat_id, `Update priceStone: ${priceStone1} and mileStone: ${mileStone}, latestPrice: ${latestPrice}`)
     }
 
-    priceStoneUpdated = close_price
+    priceStoneUpdated = latestPrice
   }
 
-  if (close_price <= priceStone1) {
+  if (latestPrice <= priceStone1) {
     bot.sendMessage(
       chat_id,
-      `Sell all tokens with price ${close_price}`
+      `Sell all tokens with price ${latestPrice}`
     );
     resetDefault();
   } 

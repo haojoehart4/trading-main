@@ -326,11 +326,11 @@ const handleTrading = async (close_price) => {
         if(mileStone === 2 && close_price > boughtPrice) {
           priceStone1 = (close_price + priceStone1) / 2
           mileStone += 1
-          bot.sendMessage(chat_id, `mua vào lần 2 với giá ${close_price}, KL 25%`)
+          bot.sendMessage(chat_id, `mua vào lần 2 với giá ${close_price}, KL 25%, priceStone: ${priceStone1}`)
         } else if(mileStone === 3) {
           priceStone1 = (close_price + priceStone1) / 2
           // mileStone += 1
-          bot.sendMessage(chat_id, `mua vào lần 3 với giá ${close_price}, KL 50%`)
+          bot.sendMessage(chat_id, `mua vào lần 3 với giá ${close_price}, KL 50%, priceStone: ${priceStone1}`)
         }
         sessionDownTrend = {count: 0, rate: 0}
         sessionUpTrend = {count: 0, rate: 0}
@@ -370,16 +370,19 @@ const handleTrading = async (close_price) => {
   const percentChange = ((close_price / priceStoneUpdated ) - 1 ) * 100
   if(percentChange > 1) {
     priceStone1 = ((percentChange / 100) * percentChange) + priceStone1
-    priceStoneUpdated = close_price
     await bot.sendMessage(chat_id, `Update pricestone: ${priceStone1}, close_price: ${close_price}`)
     if(((close_price / boughtPrice) - 1) * 100 >= 4 && mileStone === 1) {
       mileStone = 2
       priceStone1 = (close_price + priceStoneUpdated) / 2
       bot.sendMessage(chat_id, `Update priceStone: ${priceStone1} and mileStone: ${mileStone}, close_price: ${close_price}`)
-    } else {
+    }
+    
+    if(mileStone >= 2) {
       priceStone1 = (close_price + priceStoneUpdated) / 2
       bot.sendMessage(chat_id, `Update priceStone: ${priceStone1} and mileStone: ${mileStone}, close_price: ${close_price}`)
     }
+
+    priceStoneUpdated = close_price
   }
 
   if (close_price <= priceStone1) {

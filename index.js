@@ -346,19 +346,17 @@ const handleTrading = async (close_price) => {
   //sold case
   const percentChange = ((latestPrice / priceStoneUpdated ) - 1 ) * 100
   if(percentChange > 1) {
-    priceStone1 = priceStone1 + ((6 - percentChange) * priceStone1)
-    await bot.sendMessage(chat_id, `UpriceStone1pdate pricestone: ${priceStone1}, latestPrice: ${latestPrice}`)
     if(((latestPrice / boughtPrice) - 1) * 100 >= 4 && mileStone === 1) {
       mileStone = 2
       priceStone1 = (latestPrice + priceStoneUpdated) / 2
       bot.sendMessage(chat_id, `Update priceStone: ${priceStone1} and mileStone: ${mileStone}, latestPrice: ${latestPrice}`)
-    }
-    
-    if(mileStone >= 2) {
+    } else if(mileStone >= 2) {
       priceStone1 = (latestPrice + priceStoneUpdated) / 2
       bot.sendMessage(chat_id, `Update priceStone: ${priceStone1} and mileStone: ${mileStone}, latestPrice: ${latestPrice}`)
+    } else {
+      priceStone1 = priceStone1 - (((6 - percentChange) / 100) * boughtPrice)
+      await bot.sendMessage(chat_id, `Update pricestone: ${priceStone1}, latestPrice: ${latestPrice}`)
     }
-
     priceStoneUpdated = latestPrice
   }
 

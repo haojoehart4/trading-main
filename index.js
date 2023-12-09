@@ -256,7 +256,7 @@ bot.on("message", (msg) => {
     //   parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat);
     // priceBought3 = parseFloat(boughtPriceFloat) * 0.06 + parseFloat(boughtPriceFloat)
 
-    specificTime = new Date().getUTCHours() % 3
+    specificTime = 3
     bot.sendMessage(chat_id, `specificTime = ${specificTime}`)
     const connectAndListen = async () => {
       try {
@@ -294,13 +294,18 @@ bot.on("message", (msg) => {
 const handleTrading = async (close_price) => {
   const latestPrice = parseFloat(close_price)
   if(new Date().getMinutes() === 57) {
-    if(new Date().getUTCHours() % 3 === specificTime) {
+    if(specificTime === 3) {
       allowBuy = true
     }
   }
   
   //buy case
   if(new Date().getMinutes() === 58 && allowBuy) {
+    if(specificTime === 3) {
+      specificTime === 0
+    } else {
+      specificTime += 1
+    }
     let buyVol1Hr = 0
     let sellVol1Hr = 0
     allowBuy = false

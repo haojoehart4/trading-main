@@ -362,7 +362,7 @@ const handleTrading = async (close_price) => {
     priceStoneUpdated = latestPrice
   }
 
-  if (latestPrice <= priceStone1) {
+  if (priceStone1 <= latestPrice) {
     bot.sendMessage(
       chat_id,
       `Sell all tokens with price ${latestPrice}`

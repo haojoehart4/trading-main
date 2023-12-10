@@ -296,6 +296,8 @@ const handleTrading = async (close_price) => {
   if(new Date().getMinutes() === 57) {
     if(specificTime === 3) {
       allowBuy = true
+    } else {
+      allowBuy = false
     }
   }
   
@@ -308,7 +310,6 @@ const handleTrading = async (close_price) => {
     }
     let buyVol1Hr = 0
     let sellVol1Hr = 0
-    allowBuy = false
     const coupleFilterLatest = {
       startTime: new Date().getTime() - 3 * 60 * 60 * 1000,
       endTime: new Date().getTime(),

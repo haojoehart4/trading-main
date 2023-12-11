@@ -308,24 +308,32 @@ const handleTrading = async (close_price) => {
     } else {
       specificTime += 1
     }
-    let buyVol1Hr = 0
-    let sellVol1Hr = 0
+
     const coupleFilterLatest = {
       startTime: new Date().getTime() - 3 * 60 * 60 * 1000,
       endTime: new Date().getTime(),
     };
-    const result = await refetchGetVol({
-      ...coupleFilterLatest,
-          symbol: tokenPairs,
-          buyVol: buyVol1Hr,
-          sellVol: sellVol1Hr,
-    })
-    const volPast1Hr = result.buyVol - result.sellVol
-    if(volPast1Hr < 0) {
-      sessionDownTrend = {count: sessionDownTrend.count + 1, rate: result.buyVol / result.sellVol}
-      bot.sendMessage(chat_id, `volume decrease: ${volPast1Hr}, session_down_trend_count: ${sessionDownTrend.count}, session_down_trend_rate: ${result.buyVol / result.sellVol}`)
+
+    const rlt3Hrs = await refetchGetVol(coupleFilterLatest)
+
+    const coupleFilter6Hrs = {
+      startTime: new Date().getTime() - 3 * 60 * 60 * 1000,
+      endTime: new Date().getTime(),
+    };
+
+    const rlt6Hrs = await refetchGetVol(coupleFilter6Hrs)
+
+    const result = await axios.get(
+      `https://api.binance.com/api/v3/ticker?windowSize=3h&symbol=${tokenPairs}`
+    )
+
+
+
+    if(result?.data?.priceChangePercent < 0) {
+      sessionDownTrend = {count: sessionDownTrend.count + 1, volume: rlt3Hrs?.totalVolume}
+      bot.sendMessage(chat_id, `Volume: ${rlt3Hrs?.totalVolume}, session_down_trend_count: ${sessionDownTrend.count}, close_price: ${close_price}`)
     } else {
-      if((sessionDownTrend.count > 2 && sessionUpTrend.count === 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && sessionUpTrend.rate > (sessionDownTrend.rate * 1.2))) {
+      if((sessionDownTrend.count >= 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && rlt3Hrs.totalVolume / rlt6Hrs.totalVolume >= 1.5)) {
         if(mileStone === 2 && latestPrice > boughtPrice) {
           priceStone1 = (latestPrice + priceStone1) / 2
           mileStone += 1
@@ -338,8 +346,8 @@ const handleTrading = async (close_price) => {
         sessionDownTrend = {count: 0, rate: 0}
         sessionUpTrend = {count: 0, rate: 0}
       } else {
-        sessionUpTrend = {count: sessionUpTrend.count + 1, rate: result.buyVol / result.sellVol}
-        bot.sendMessage(chat_id, `volume increase: ${volPast1Hr}, session_up_trend_count: ${sessionUpTrend.count}, session_up_trend_rate: ${result.buyVol / result.sellVol}`)
+        sessionUpTrend = {count: sessionUpTrend.count + 1, volume: rlt3Hrs?.totalVolume}
+        bot.sendMessage(chat_id, `Volume: ${rlt3Hrs?.totalVolume}, session_up_trend_count: ${sessionUpTrend.count}, close_price: ${close_price}`)
       }
     }
   }

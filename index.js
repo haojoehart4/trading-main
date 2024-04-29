@@ -1,9 +1,7 @@
 const express = require("express");
 const app = express();
-const { Server } = require("socket.io");
-// const ws = require('ws')
+const crypto = require("crypto");
 const cors = require("cors");
-const mysql = require("mysql2");
 const Binance = require("node-binance-api");
 const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
@@ -14,8 +12,6 @@ app.use(express.json());
 const request = require("request");
 const _ = require("lodash");
 dotenv.config();
-const WebSocket = require("ws");
-const schedule = require("node-schedule");
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header(
@@ -25,9 +21,9 @@ app.use(function (req, res, next) {
   next();
 });
 const TelegramBot = require("node-telegram-bot-api");
-const { timeConvert, refetchGetVol } = require("./utils/helper");
-const findnewtokenUpTrend = require("./features/findnewtokenuptrend");
-const findnewtokenDownTrend = require("./features/findnewtokendowntrend");
+const {
+  getTotalBalance,
+} = require("./utils/helper");
 
 app.get("/", (req, res) => {
   res.send("Hello from Node.js!");
@@ -36,10 +32,12 @@ app.get("/", (req, res) => {
 const binance = new Binance().options({
   APIKEY: process.env.BINACE_API_KEY,
   APISECRET: process.env.BINANCE_API_SECRET_KEY,
+  family: 4,
   useServerTime: true,
   reconnect: true,
-  family: 4,
 });
+
+// binance.useServerTime()
 
 // binance.futuresPrices()
 // .then((data) => console.log(`Future Price`, data))
@@ -79,10 +77,13 @@ const binance = new Binance().options({
 //   console.log("Total sell volume: ", totalSellVolume);
 // });
 
+// binance.prices('BNBBTC', (error, ticker) => {
+//   console.info("Price of BNB: ", ticker.BNBBTC);
+// });
+
 // binance.balance((error, balances) => {
 //   if ( error ) return console.error(error);
 //   console.info("balances()", balances);
-//   console.info("ETH balance: ", balances.ETH.available);
 // });
 
 // binance.futuresMiniTickerStream( 'LQTYUSDT', (response) => {
@@ -119,31 +120,20 @@ bot.on("polling_error", (msg) => console.log(msg));
 // -------------------------- Binance Code Example ---------------
 // Subscribe to the Binance websocket stream for the market price of BTCUSDT
 let chat_id = 0;
-let countingStepBalance = 0;
+let numberStone = 20;
 let mileStone = 1;
 let priceStone1 = 0;
-let priceStone2 = 0;
-let priceStone3 = 0;
-let priceBought1 = 0;
-let priceBought2 = 0;
-let priceBought3 = 0;
-let defaultPriceStone3 = 0;
-let multipleStep2 = 1;
-let tokenPairs = "btcusdt";
+let tokenPairs = [];
 let boughtPrice = 0;
 let interval = null;
-let sessionDownTrend = {count: 0, rate: 0};
-let sessionUpTrend = {count: 0, rate: 0};
-let allowBuy = true;
-let specificTime = null
-let priceStoneUpdated = 0
-
-const targetTime = new Date();
-targetTime.setHours(targetTime.getHours() + 1);
+let priceStoneUpdated = 0;
+let totalBalance = 0;
+let quantityBuy = 0;
+let tokenDefault = {};
 
 bot.onText(/\/start/, (msg) => {
   chat_id = msg.chat.id;
-  console.log('chat_id', chat_id)
+  console.log("chat_id", chat_id);
   bot.sendMessage(
     msg.chat.id,
     "Hello mate, wish your day will be greater than yesterday. Can i help you ?",
@@ -154,6 +144,7 @@ bot.onText(/\/start/, (msg) => {
             "Invest new token",
             "Find new token to invest",
             "Get balance information",
+            "Track price",
           ],
         ],
       },
@@ -164,241 +155,127 @@ bot.onText(/\/start/, (msg) => {
 bot.onText(/\/stop/, async (msg) => {
   tokenPairs = "BTCUSDT";
   await bot.sendMessage(msg.chat.id, "Stop bot successfully");
-  resetDefault();
-  if (bot.isPolling()) {
-    await bot.stopPolling({ cancel: true });
-  }
+  await resetDefault();
+  await closeInterval();
+  // if (bot.isPolling()) {
+  //   await bot.stopPolling({ cancel: true });
+  // }
   //  ws.close()
 });
 
 const resetDefault = () => {
   mileStone = 1;
   priceStone1 = 0;
-  priceStone2 = 0;
-  priceStone3 = 0;
-  priceBought1 = 0;
-  priceBought2 = 0;
-  defaultPriceStone3 = 0;
-  multipleStep2 = 1;
   boughtPrice = 0;
   chat_id = null;
-  sessionDownTrend = {count: 0, rate :0}
-  sessionUpTrend = {count: 0, rate: 0}
-  allowBuy = false
-  specificTime = null
-  priceStoneUpdated = 0
+  priceStoneUpdated = 0;
+  numberStone = 0;
+  tokenDefault = {};
+  tokenPairs = [];
+};
+
+const closeInterval = () => {
   if (interval) {
     clearInterval(interval);
   }
 };
 
 bot.on("message", (msg) => {
-  if (msg.text.toString().toLowerCase().indexOf("yes") !== -1) {
-    notificationVolume = "";
-    boolToCheck = false;
-  }
-
-  if (msg.text.toString().toLowerCase().indexOf("invest new token") !== -1) {
-    bot.sendMessage(msg.chat.id, "Please type new token pairs to invest");
-  }
-
   if (msg.text.toString().toLowerCase().indexOf("balance") !== -1) {
-    binance.balance((error, balances) => {
-      if (error) return console.error(error);
-      let balanceResult = [];
-      for (const x in balances) {
-        if (parseFloat(balances[x].available) > 0) {
-          balanceResult.push(`${x}: ${balances[x].available}`);
-        }
-      }
-      const responseToUser = balanceResult.join(", ");
-      bot.sendMessage(
-        msg.chat.id,
-        `Your balance information here: ${responseToUser}`
-      );
-    });
-  }
-
-  if (
-    msg.text.toString().toLowerCase().indexOf("usdt") !== -1 &&
-    msg.text.toString().toLowerCase().indexOf("pair") !== -1
-  ) {
-    axios
-      .get(
-        `https://api.binance.com/api/v3/historicalTrades?symbol=${msg.text
-          .split(" ")[1]
-          .trim()
-          .toUpperCase()}&limit=1`
-      )
-      .then((res) => {
-        tokenPairs = msg.text.split(" ")[1].trim();
-        bot.sendMessage(chat_id, "Please type bought price homie.");
-      })
-      .catch((err) => {
-        bot.sendMessage(msg.chat.id, err.message);
-        bot.sendMessage(msg.chat.id, "BOT not found the token pairs.");
+    try {
+      getTotalBalance(binance, "USDT").then((res) => {
+        bot.sendMessage(msg.chat.id, `Your balance in  formation here: ${res}`);
       });
+    } catch (err) {
+      console.log(err);
+    }
   }
 
-  if (msg.text.toString().toLowerCase().indexOf("price") !== -1) {
-    const boughtPriceFloat = msg.text.split(":")[1].trim();
-    boughtPrice = parseFloat(boughtPriceFloat);
-    priceStoneUpdated = parseFloat(boughtPriceFloat)
-    priceStone1 =
-      parseFloat(boughtPriceFloat) - parseFloat(boughtPriceFloat) * 0.06;
+  //1
+  if (msg.text.toString().toLowerCase().indexOf("track") !== -1) {
+    bot.sendMessage(msg.chat.id, `Please typing token`);
+  }
 
-    // priceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
-    // defaultPriceStone3 = parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat)
-  
-    // priceBought1 =
-    //   parseFloat(boughtPriceFloat) * 0.02 + parseFloat(boughtPriceFloat);
-    // priceBought2 =
-    //   parseFloat(boughtPriceFloat) * 0.04 + parseFloat(boughtPriceFloat);
-    // priceBought3 = parseFloat(boughtPriceFloat) * 0.06 + parseFloat(boughtPriceFloat)
+  if (msg.text.toString().toLowerCase().indexOf("token") !== -1) {
+    try {
+      const tokenGot = msg.text.toString().split(":")[1].trim();
+      const capitalizeLetter = tokenGot.toUpperCase();
 
-    specificTime = 3
-    bot.sendMessage(chat_id, `specificTime = ${specificTime}`)
+      axios
+        .get(
+          `https://api.binance.com/api/v3/ticker/price?symbol=${capitalizeLetter}`
+        )
+        .then((res) => {
+          tokenDefault = {
+            symbol: res?.data?.symbol,
+            price: parseFloat(res?.data?.price),
+            priceStone:
+              parseFloat(res?.data?.price) -
+              parseFloat(res?.data?.price) * 0.2,
+            priceStoneUpdated: parseFloat(res?.data?.price)
+          };
+          bot.sendMessage(msg.chat.id, `Please type quantity`);
+        });
+    } catch (e) {
+      console.log(e.response);
+      bot.sendMessage(chat_id, "Stop found.");
+      return false;
+    }
+  }
+
+  if (msg.text.toString().toLowerCase().indexOf("quantity") !== -1) {
+    const priceStr = msg.text.toString().split(":")[1].trim();
+    tokenDefault.quantity = Math.round(parseFloat(priceStr));
+    bot.sendMessage(
+      msg.chat.id,
+      `Symbol: ${tokenDefault.symbol}, price: ${tokenDefault.price}, priceStone: ${tokenDefault.priceStone}, quantity: ${tokenDefault.quantity}`
+    );
     const connectAndListen = async () => {
       try {
         const result = await axios.get(
-          `https://api.binance.com/api/v3/ticker/price?symbol=${tokenPairs.toUpperCase()}`
+          `https://api.binance.com/api/v3/ticker/price?symbol=${tokenDefault.symbol}`
         );
-        handleTrading(result?.data?.price);
+        await handleTrading(parseFloat(result.data.price));
       } catch (e) {
         console.log(e?.response?.data?.message);
       }
     };
-    interval = setInterval(connectAndListen, 20000);
-  }
-
-  if (msg.text.toString().toLowerCase().indexOf("find new token") !== -1) {
-    bot.sendMessage(msg.chat.id, "Select kind of trading you want", {
-      reply_markup: {
-        keyboard: [["Downtrend", "Uptrend"]],
-      },
-    });
-  }
-
-  if (
-    msg.text.toString().toLowerCase().indexOf("downtrend") !== -1 ||
-    msg.text.toString().toLowerCase().indexOf("uptrend") !== -1
-  ) {
-    if (msg.text.toString().toLowerCase() === "downtrend") {
-      findnewtokenDownTrend(bot, chat_id);
-    } else {
-      findnewtokenUpTrend(bot, chat_id);
-    }
+    interval = setInterval(connectAndListen, 10000);
   }
 });
 
-const handleTrading = async (close_price) => {
-  const latestPrice = parseFloat(close_price)
-  if(new Date().getMinutes() === 57) {
-    if(specificTime === 3) {
-      allowBuy = true
+const handleTrading = async (latestPrice) => {
+  try {
+    const percentChange = (latestPrice / tokenDefault.priceStoneUpdated - 1) * 100;
+    if (latestPrice <= tokenDefault.priceStone) {
+      const qtyPayload = Math.round(tokenDefault.quantity - tokenDefault.quantity * 0.2);
+      await binance
+        .marketSell(elm.symbol.toUpperCase(), qtyPayload)
+        .then((res) => {
+          closeInterval()
+          resetDefault()
+          bot.sendMessage(
+            chat_id,
+            `Bán token: ${latestPrice} với giá: ${res.fills[0]?.price}, khối lượng: ${qtyPayload}`
+          );
+        });
     } else {
-      allowBuy = false
-    }
-  }
-  
-  //buy case
-  if(new Date().getMinutes() === 58 && allowBuy) {
-    if(specificTime === 3) {
-      specificTime === 0
-    } else {
-      specificTime += 1
-    }
-
-    const coupleFilterLatest = {
-      startTime: new Date().getTime() - 3 * 60 * 60 * 1000,
-      endTime: new Date().getTime(),
-    };
-
-    const rlt3Hrs = await refetchGetVol(coupleFilterLatest)
-
-    const coupleFilter6Hrs = {
-      startTime: new Date().getTime() - 3 * 60 * 60 * 1000,
-      endTime: new Date().getTime(),
-    };
-
-    const rlt6Hrs = await refetchGetVol(coupleFilter6Hrs)
-
-    const result = await axios.get(
-      `https://api.binance.com/api/v3/ticker?windowSize=3h&symbol=${tokenPairs}`
-    )
-
-
-
-    if(result?.data?.priceChangePercent < 0) {
-      sessionDownTrend = {count: sessionDownTrend.count + 1, volume: rlt3Hrs?.totalVolume}
-      bot.sendMessage(chat_id, `Volume: ${rlt3Hrs?.totalVolume}, session_down_trend_count: ${sessionDownTrend.count}, close_price: ${close_price}`)
-    } else {
-      if((sessionDownTrend.count >= 2) || (sessionDownTrend > 2 && sessionUpTrend === 1 && rlt3Hrs.totalVolume / rlt6Hrs.totalVolume >= 1.5)) {
-        if(mileStone === 2 && latestPrice > boughtPrice) {
-          priceStone1 = (latestPrice + priceStone1) / 2
-          mileStone += 1
-          bot.sendMessage(chat_id, `mua vào lần 2 với giá ${latestPrice}, KL 25%, priceStone: ${priceStone1}, latestPrice: ${latestPrice}`)
-        } else if(mileStone === 3) {
-          priceStone1 = (latestPrice + priceStone1) / 2
-          // mileStone += 1
-          bot.sendMessage(chat_id, `mua vào lần 3 với giá ${latestPrice}, KL 50%, priceStone: ${priceStone1}, latestPrice: ${latestPrice}`)
-        }
-        sessionDownTrend = {count: 0, rate: 0}
-        sessionUpTrend = {count: 0, rate: 0}
-      } else {
-        sessionUpTrend = {count: sessionUpTrend.count + 1, volume: rlt3Hrs?.totalVolume}
-        bot.sendMessage(chat_id, `Volume: ${rlt3Hrs?.totalVolume}, session_up_trend_count: ${sessionUpTrend.count}, close_price: ${close_price}`)
+      //-------------- CẬP NHẬT PRICESTONE VÀ MUA THÒNG --------------------//
+      if (percentChange > 2) {
+        tokenDefault.priceStone = latestPrice - latestPrice * 0.2;
+        await bot.sendMessage(
+          chat_id,
+          `Cập nhật pricestone - Symbol: ${tokenDefault.symbol}, price: ${tokenDefault.price}, priceStone: ${tokenDefault.priceStone}, quantity: ${tokenDefault.quantity}`
+        );
+        tokenDefault.priceStoneUpdated = latestPrice;
       }
     }
+  } catch (err) {
+    console.log("error_ne", err);
   }
-
-  //sold case
-  const percentChange = ((latestPrice / priceStoneUpdated ) - 1 ) * 100
-  if(percentChange > 1) {
-    if(((latestPrice / boughtPrice) - 1) * 100 >= 4 && mileStone === 1) {
-      mileStone = 2
-      priceStone1 = (latestPrice + priceStoneUpdated) / 2
-      bot.sendMessage(chat_id, `Update priceStone: ${priceStone1} and mileStone: ${mileStone}, latestPrice: ${latestPrice}`)
-    } else if(mileStone >= 2) {
-      priceStone1 = (latestPrice + priceStoneUpdated) / 2
-      bot.sendMessage(chat_id, `Update priceStone: ${priceStone1} and mileStone: ${mileStone}, latestPrice: ${latestPrice}`)
-    } else {
-      priceStone1 = priceStone1 - (((6 - percentChange) / 100) * boughtPrice)
-      await bot.sendMessage(chat_id, `Update pricestone: ${priceStone1}, latestPrice: ${latestPrice}`)
-    }
-    priceStoneUpdated = latestPrice
-  }
-
-  if (latestPrice <= priceStone1) {
-    bot.sendMessage(
-      chat_id,
-      `Sell all tokens with price ${latestPrice}`
-    );
-    resetDefault();
-  } 
-  // else {
-  //   if (close_price <= priceStone2 && mileStone === 2) {
-  //     bot.sendMessage(
-  //       chat_id,
-  //       `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
-  //     );
-  //     resetDefault();
-  //   } else if (close_price <= priceStone3 && mileStone === 3) {
-  //     bot.sendMessage(
-  //       chat_id,
-  //       `Sell all tokens with price ${close_price} at mileStone = ${mileStone}`
-  //     );
-  //     resetDefault();
-  //   }
-  // }
 };
 
 const server = require("http").createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:80",
-  },
-});
 
 // io.on((socket, next) => {
 

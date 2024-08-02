@@ -9,6 +9,7 @@ const axios = require("axios");
 app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
+const request = require("request");
 const _ = require("lodash");
 dotenv.config();
 app.use(function (req, res, next) {
@@ -21,7 +22,11 @@ app.use(function (req, res, next) {
 });
 const TelegramBot = require("node-telegram-bot-api");
 const {
+  timeConvert,
+  refetchGetVol,
+  getTotalBalance,
 } = require("./utils/helper");
+const findNewTokenLongTerm = require("./features/findnewtokenlongterm");
 const { parse } = require("path");
 
 app.get("/", (req, res) => {
@@ -116,9 +121,15 @@ bot.on("polling_error", (msg) => console.log(msg));
 // -------------------------- Binance Code Example ---------------
 // Subscribe to the Binance websocket stream for the market price of BTCUSDT
 let chat_id = 0;
+let numberStone = 20;
+let mileStone = 1;
+let priceStone1 = 0;
+let tokenPairs = [];
+let boughtPrice = 0;
 let interval = null;
 let tokenDefault = {};
-let times = 0
+let times = 0;
+let ratio = 1;
 
 bot.onText(/\/start/, (msg) => {
   chat_id = msg.chat.id;
@@ -129,7 +140,7 @@ bot.onText(/\/start/, (msg) => {
     {
       reply_markup: {
         keyboard: [
-          ["Invest new token", "price_bought"],
+          ["Invest new token", "Get balance information", "price_bought", "set_rt"],
         ],
       },
     }
@@ -138,13 +149,6 @@ bot.onText(/\/start/, (msg) => {
 
 // binance.futuresOpenOrders().then((res) => {
 //   console.log('res', res)
-// });
-
-//  binance.balance((error, balances) => {
-//   if ( error ) {
-//     console.error(error)
-//   }
-//   console.info("balances()", balances);
 // });
 
 bot.onText(/\/stop/, async (msg) => {
@@ -167,7 +171,8 @@ const resetDefault = () => {
   numberStone = 0;
   tokenDefault = {};
   tokenPairs = [];
-  times = 0
+  times = 0;
+  ratio = 0
 };
 
 const closeInterval = () => {
@@ -177,8 +182,32 @@ const closeInterval = () => {
 };
 
 bot.on("message", (msg) => {
+  if (msg.text.toString().toLowerCase().indexOf("balance") !== -1) {
+    try {
+      binance.futuresBalance().then((res) => {
+        const USDT = res?.find((item) => item.asset === "USDT")?.balance;
+        bot.sendMessage(chat_id, USDT);
+      });
+
+      // getTotalBalance(binance, "USDT").then((res) => {
+      //   bot.sendMessage(msg.chat.id, `Your balance in  formation here: ${res}`);
+      // });
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
   //1
   if (msg.text.toString().toLowerCase().indexOf("price_bought") !== -1) {
+    bot.sendMessage(msg.chat.id, `Please typing ratio`);
+  }
+
+  if (msg.text.toString().toLowerCase().indexOf("set_rt") !== -1) {
+    ratio = parseFloat(msg.text.toString().split(":")[1].trim());
+  }
+
+  if (msg.text.toString().toLowerCase().indexOf("ratio") !== -1) {
+    ratio = parseFloat(msg.text.toString().split(":")[1].trim());
     bot.sendMessage(msg.chat.id, `Please typing price bought`);
   }
 
@@ -186,13 +215,7 @@ bot.on("message", (msg) => {
     const priceGot = parseFloat(msg.text.toString().split(":")[1].trim());
     tokenDefault.price = priceGot
     tokenDefault.priceStoneUpdated = priceGot
-    if(times >= 2) {
-      tokenDefault.priceStone = priceGot - priceGot * 0.15;
-    } else if(times === 1) {
-      tokenDefault.priceStone = priceGot - priceGot * 0.175;
-    } else {
-      tokenDefault.priceStone = priceGot - priceGot * 0.2;
-    }
+    tokenDefault.priceStone = priceGot - priceGot * (ratio/100);
     bot.sendMessage(msg.chat.id, `Please typing token`);
   }
 
@@ -218,7 +241,7 @@ bot.on("message", (msg) => {
 
       const connectAndListen = async () => {
         try {
-          const result = await binance.prices(tokenDefault.symbol);
+          const result = await binance.futuresPrices();
           await handleTrading(parseFloat(result[tokenDefault.symbol]));
         } catch (e) {
           console.log(e?.response?.data?.message);
@@ -237,36 +260,38 @@ const handleTrading = async (latestPrice) => {
   try {
     const percentChange =
       (latestPrice / tokenDefault.priceStoneUpdated - 1) * 100;
-      bot.sendMessage(chat_id, times)
     if (latestPrice <= tokenDefault.priceStone) {
-      await binance.balance(async(error, balances) => {
-        const tokenShortName = await tokenDefault.symbol.replace('USDT', '')
-        const qtyToken = await parseFloat(balances[tokenShortName].available)
-        const qtySold = await Math.round(qtyToken - qtyToken * 0.2)
-        await binance.marketSell(tokenDefault.symbol, qtySold).then((res) => {
-          closeInterval()
-          resetDefault()
-          bot.sendMessage(
-            chat_id,
-            `Bán token: ${latestPrice} với giá: ${res.fills[0]?.price}, khối lượng: ${qtySold}`
-          );
-        }).catch((err) => {
-          console.error(err)
-        })
+      await binance.futuresPositionRisk().then((res) => {
+        const tokenInfo = res.find(
+          (position) => position.symbol === tokenDefault.symbol
+        );
+        const qty = tokenInfo?.positionAmt;
+        binance
+          .futuresMultipleOrders([
+            {
+              symbol: "LINKUSDT",
+              side: "SELL",
+              // positionSide: "LONG",
+              type: "MARKET",
+              quantity: qty,
+            },
+          ])
+          .then((res) => {
+            closeInterval();
+            resetDefault();
+            bot.sendMessage(
+              chat_id,
+              `Đóng lệnh: Với giá: ${latestPrice}`
+            );
+          });
       });
     } else {
       //-------------- CẬP NHẬT PRICESTONE VÀ MUA THÒNG --------------------//
       if (percentChange > 2) {
-        if(times >= 2) {
-          tokenDefault.priceStone = latestPrice - latestPrice * 0.15;
-        } else if(times === 1) {
-          tokenDefault.priceStone = latestPrice - latestPrice * 0.175;
-        } else {
-          tokenDefault.priceStone = latestPrice - latestPrice * 0.2;
-        }
+        tokenDefault.priceStone = latestPrice - latestPrice * (ratio / 100);
         await bot.sendMessage(
           chat_id,
-          `Cập nhật pricestone - Symbol: ${tokenDefault.symbol}, price: ${latestPrice}, priceStone: ${tokenDefault.priceStone}, times: ${times}`
+          `Cập nhật pricestone - Symbol: ${tokenDefault.symbol}, price: ${latestPrice}, priceStone: ${tokenDefault.priceStone}, ratio: ${ratio}`
         );
         tokenDefault.priceStoneUpdated = latestPrice;
       }

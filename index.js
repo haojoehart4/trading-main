@@ -194,19 +194,18 @@ bot.on("message", (msg) => {
   //1
 
   if (msg.text.toString().toLowerCase().indexOf("set_rt") !== -1) {
-    ratio = parseFloat(msg.text.toString().split(":")[1].trim());
+    bot.sendMessage(msg.chat.id, `Please typing ratio`);
   }
 
   if (msg.text.toString().toLowerCase().indexOf("ratio") !== -1) {
     ratio = parseFloat(msg.text.toString().split(":")[1].trim());
-    bot.sendMessage(msg.chat.id, `Please typing price bought`);
   }
 
   if (msg.text.toString().toLowerCase().indexOf("bought") !== -1) {
     const priceGot = parseFloat(msg.text.toString().split(":")[1].trim());
     tokenDefault.price = priceGot
     tokenDefault.priceStoneUpdated = priceGot
-    tokenDefault.priceStone = priceGot - priceGot * (ratio/100);
+    tokenDefault.priceStone = priceGot - (priceGot * (ratio/100));
     bot.sendMessage(msg.chat.id, `Please typing token`);
   }
 
@@ -260,7 +259,7 @@ const handleTrading = async (latestPrice) => {
         binance
           .futuresMultipleOrders([
             {
-              symbol: "LINKUSDT",
+              symbol: tokenInfo,
               side: "SELL",
               // positionSide: "LONG",
               type: "MARKET",
@@ -278,8 +277,8 @@ const handleTrading = async (latestPrice) => {
       });
     } else {
       //-------------- CẬP NHẬT PRICESTONE VÀ MUA THÒNG --------------------//
-      if (percentChange > 2) {
-        tokenDefault.priceStone = latestPrice - latestPrice * (ratio / 100);
+      if (percentChange > 1.5) {
+        tokenDefault.priceStone = latestPrice - (latestPrice * (ratio / 100));
         await bot.sendMessage(
           chat_id,
           `Cập nhật pricestone - Symbol: ${tokenDefault.symbol}, price: ${latestPrice}, priceStone: ${tokenDefault.priceStone}, ratio: ${ratio}`

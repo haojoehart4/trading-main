@@ -21,6 +21,13 @@ app.use(function (req, res, next) {
   next();
 });
 const TelegramBot = require("node-telegram-bot-api");
+const {
+  timeConvert,
+  refetchGetVol,
+  getTotalBalance,
+} = require("./utils/helper");
+const findNewTokenLongTerm = require("./features/findnewtokenlongterm");
+const { parse } = require("path");
 
 app.get("/", (req, res) => {
   res.send("Hello from Node.js!");
@@ -191,9 +198,6 @@ bot.on("message", (msg) => {
   }
 
   //1
-  if (msg.text.toString().toLowerCase().indexOf("price_bought") !== -1) {
-    bot.sendMessage(msg.chat.id, `Please typing ratio`);
-  }
 
   if (msg.text.toString().toLowerCase().indexOf("set_rt") !== -1) {
     ratio = parseFloat(msg.text.toString().split(":")[1].trim());

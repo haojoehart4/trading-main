@@ -21,12 +21,6 @@ app.use(function (req, res, next) {
   next();
 });
 const TelegramBot = require("node-telegram-bot-api");
-const {
-  timeConvert,
-  refetchGetVol,
-  getTotalBalance,
-} = require("./utils/helper");
-const findNewTokenLongTerm = require("./features/findnewtokenlongterm");
 const { parse } = require("path");
 
 app.get("/", (req, res) => {
